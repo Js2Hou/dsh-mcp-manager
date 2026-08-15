@@ -10,6 +10,19 @@ import type { McpFieldErrors, McpServerConfig, McpTransport } from './shared.ts'
 const SERVER_NAME_RE = /^[A-Za-z0-9_-]{1,32}$/
 const ENTRY_ID_RE = /^[A-Za-z0-9_-]{1,64}$/
 
+/** Trim surrounding quotes from a pasted JSON-style key/value pair. */
+function stripQuotes(value: string): string {
+  const trimmed = value.trim()
+  if (trimmed.length >= 2) {
+    const first = trimmed[0]
+    const last = trimmed[trimmed.length - 1]
+    if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
+      return trimmed.slice(1, -1).trim()
+    }
+  }
+  return trimmed
+}
+
 /** Parse a key=value / `key: value` line block into a record. */
 export function parseKeyValueBlock(lines: string[] | undefined): Record<string, string> | undefined {
   if (lines === undefined) return undefined
@@ -21,7 +34,7 @@ export function parseKeyValueBlock(lines: string[] | undefined): Record<string, 
     const colon = trimmed.indexOf(':')
     const sep = eq === -1 ? colon : colon === -1 ? eq : Math.min(eq, colon)
     if (sep <= 0) continue
-    out[trimmed.slice(0, sep).trim()] = trimmed.slice(sep + 1).trim()
+    out[stripQuotes(trimmed.slice(0, sep))] = stripQuotes(trimmed.slice(sep + 1))
   }
   return out
 }

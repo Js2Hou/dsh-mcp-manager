@@ -46,6 +46,12 @@
       "@deepseek-ai/dsh-client-connection/client": [
         "D:/ProgramFiles/DeepSeekHarness/DeepSeek Harness/resources/host/node_modules/@deepseek-ai/dsh-client-connection/lib/types/client/index.d.ts"
       ],
+      "@deepseek-ai/dsh-client-locale": [
+        "D:/ProgramFiles/DeepSeekHarness/DeepSeek Harness/resources/host/node_modules/@deepseek-ai/dsh-client-locale/lib/types/index.d.ts"
+      ],
+      "@deepseek-ai/dsh-client-locale/client": [
+        "D:/ProgramFiles/DeepSeekHarness/DeepSeek Harness/resources/host/node_modules/@deepseek-ai/dsh-client-locale/lib/types/client/index.d.ts"
+      ],
       "@deepseek-ai/dsh-client-ui-sidebar": [
         "D:/ProgramFiles/DeepSeekHarness/DeepSeek Harness/resources/host/node_modules/@deepseek-ai/dsh-client-ui-sidebar/lib/types/index.d.ts"
       ],

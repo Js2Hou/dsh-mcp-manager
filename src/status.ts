@@ -116,7 +116,8 @@ export function serverNameTaken(ctx: Context, serverName: string, exceptId?: str
   for (const entry of ctx.loader.entries()) {
     if (entry.options.group) continue
     if (entry.options.name !== MCP_CLIENT_PACKAGE) continue
-    if (exceptId !== undefined && entry.id === exceptId) continue
+    // Compare file-level ids (tree ids carry the `include:` root prefix).
+    if (exceptId !== undefined && normalizeEntryId(entry.id) === exceptId) continue
     const raw = (entry.options.config ?? {}) as Record<string, unknown>
     if (raw['serverName'] === serverName) return true
   }

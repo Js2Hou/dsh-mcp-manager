@@ -3,14 +3,23 @@
  * enable/disable, edit and on-demand connectivity tests. Rendered inside the
  * Settings panel as the "MCP" page (a `settings.section` entry).
  *
+ * Copy is fully localized (zh/en) through the shell's locale service and
+ * follows the active GUI language automatically. The add form sits at the top
+ * of the page; the edit form opens **in place of** the card being edited, and
+ * the two modes are mutually exclusive.
+ *
  * All data flows through the typed RPC client to the host half.
  *
  * @module dsh-mcp-manager/client/McpManagerSection
  */
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
+// Type-only: pulls `Context { locale }` into the program.
+import type {} from '@deepseek-ai/dsh-client-locale/client'
+import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { McpFieldErrors, McpProbeResult, McpServerConfig, McpServerInfo } from '../shared.ts'
 import { callRpc, McpManagerRpcError } from './rpc.ts'
+import { NS } from './locales.ts'
 import {
   EditIcon,
   PlugIcon,
@@ -20,15 +29,6 @@ import {
   ServerIcon,
   TrashIcon,
 } from './icons.tsx'
-
-/** Human label for a fiber phase. */
-const PHASE_LABEL: Record<string, string> = {
-  pending: 'Pending',
-  loading: 'Loading',
-  active: 'Active',
-  failed: 'Failed',
-  unloading: 'Unloading',
-}
 
 interface PatchInfo {
   path: string
@@ -41,28 +41,48 @@ interface SectionProps {
   ctx: ClientContext
 }
 
-function errorMessage(error: unknown): string {
-  if (error instanceof McpManagerRpcError) return error.message.replace(/^[a-z-]+: /, '')
+/** Status keys used by the card badge (a subset of the locale dictionary). */
+type StatusKey =
+  | 'statusConnected'
+  | 'statusActiveNoTools'
+  | 'statusFailed'
+  | 'statusDisabled'
+  | 'statusLoading'
+  | 'statusPending'
+  | 'statusUnloading'
+  | 'statusNotLoaded'
+
+function errorMessage(error: unknown, t: TranslateNS<typeof NS>): string {
+  if (error instanceof McpManagerRpcError) {
+    switch (error.code) {
+      case 'duplicate-id': return t('errDuplicateId')
+      case 'duplicate-server-name': return t('errDuplicateName')
+      case 'invalid-config': return t('errInvalidConfig')
+      case 'not-found': return t('errNotFound')
+      default: return error.message.replace(/^[a-z-]+: /, '')
+    }
+  }
   return error instanceof Error ? error.message : String(error)
 }
 
 /** Derive the visual status of one server. */
-function statusOf(server: McpServerInfo): { tone: string; label: string } {
-  if (!server.enabled) return { tone: 'off', label: 'Disabled' }
+function statusOf(server: McpServerInfo): { tone: string; key: StatusKey; count?: string } {
+  if (!server.enabled) return { tone: 'off', key: 'statusDisabled' }
   switch (server.fiberPhase) {
     case 'active':
-      if (server.toolCount > 0) {
-        return { tone: 'ok', label: `Connected · ${server.toolCount} tools` }
-      }
-      return { tone: 'ok', label: 'Active · 0 tools' }
+      return server.toolCount > 0
+        ? { tone: 'ok', key: 'statusConnected', count: String(server.toolCount) }
+        : { tone: 'ok', key: 'statusActiveNoTools' }
     case 'failed':
-      return { tone: 'bad', label: 'Failed' }
+      return { tone: 'bad', key: 'statusFailed' }
     case 'loading':
+      return { tone: 'warn', key: 'statusLoading' }
     case 'pending':
+      return { tone: 'warn', key: 'statusPending' }
     case 'unloading':
-      return { tone: 'warn', label: PHASE_LABEL[server.fiberPhase] }
+      return { tone: 'warn', key: 'statusUnloading' }
     default:
-      return { tone: 'off', label: 'Not loaded' }
+      return { tone: 'off', key: 'statusNotLoaded' }
   }
 }
 
@@ -78,14 +98,21 @@ function targetOf(server: McpServerInfo): string {
  * @param props - settings owner `close` + injected client context.
  */
 export function McpManagerSection({ ctx }: SectionProps): JSX.Element {
+  const t = ctx.locale.bind(NS)
+  const [, bump] = useReducer((x: number) => x + 1, 0)
+  useEffect(() => ctx.locale.subscribe(bump), [ctx])
+
   const [servers, setServers] = useState<McpServerInfo[]>([])
   const [patchInfo, setPatchInfo] = useState<PatchInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [showForm, setShowForm] = useState(false)
-  const [editing, setEditing] = useState<McpServerInfo | null>(null)
+  const [adding, setAdding] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [probes, setProbes] = useState<Record<string, McpProbeResult>>({})
+
+  const formOpen = adding || editingId !== null
+  const actionsDisabled = busy !== null || formOpen
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -96,11 +123,11 @@ export function McpManagerSection({ ctx }: SectionProps): JSX.Element {
       const { patch } = await callRpc<{ patch: PatchInfo }>(ctx, 'patchInfo')
       setPatchInfo(patch)
     } catch (err) {
-      setError(errorMessage(err))
+      setError(errorMessage(err, t))
     } finally {
       setLoading(false)
     }
-  }, [ctx])
+  }, [ctx, t])
 
   useEffect(() => { void refresh() }, [refresh])
 
@@ -118,11 +145,11 @@ export function McpManagerSection({ ctx }: SectionProps): JSX.Element {
       await action()
       refreshSettled()
     } catch (err) {
-      setError(errorMessage(err))
+      setError(errorMessage(err, t))
     } finally {
       setBusy(null)
     }
-  }, [refreshSettled])
+  }, [refreshSettled, t])
 
   const toggleEnabled = useCallback((server: McpServerInfo) => {
     void run(
@@ -132,9 +159,9 @@ export function McpManagerSection({ ctx }: SectionProps): JSX.Element {
   }, [ctx, run])
 
   const removeServer = useCallback((server: McpServerInfo) => {
-    if (!window.confirm(`Remove MCP server "${server.serverName}" (${server.id})?\nThis edits cordis.patch.yml and disconnects its tools.`)) return
+    if (!window.confirm(t('removeConfirm', { name: server.serverName, id: server.id }))) return
     void run(() => callRpc(ctx, 'remove', { id: server.id }), `remove:${server.id}`)
-  }, [ctx, run])
+  }, [ctx, run, t])
 
   const testConnection = useCallback((server: McpServerInfo) => {
     void run(async () => {
@@ -144,13 +171,18 @@ export function McpManagerSection({ ctx }: SectionProps): JSX.Element {
   }, [ctx, run])
 
   const beginAdd = useCallback(() => {
-    setEditing(null)
-    setShowForm(true)
+    setEditingId(null)
+    setAdding(true)
+  }, [])
+
+  const closeForms = useCallback(() => {
+    setAdding(false)
+    setEditingId(null)
   }, [])
 
   const beginEdit = useCallback((server: McpServerInfo) => {
-    setEditing(server)
-    setShowForm(true)
+    setAdding(false)
+    setEditingId(server.id)
   }, [])
 
   const summary = useMemo(() => {
@@ -165,57 +197,81 @@ export function McpManagerSection({ ctx }: SectionProps): JSX.Element {
       <div className="dshmcp-head">
         <span className="dshmcp-head-title">
           <ServerIcon size={15} />
-          MCP servers
-          <span className="dshmcp-head-sub">{summary.total} total</span>
+          {t('title')}
+          <span className="dshmcp-head-sub">{t('total', { count: String(summary.total) })}</span>
         </span>
-        <button type="button" className="dshmcp-iconbtn" title="Refresh" onClick={() => void refresh()} disabled={busy !== null || loading}>
+        <button type="button" className="dshmcp-iconbtn" title={t('refresh')} onClick={() => void refresh()} disabled={actionsDisabled || loading}>
           {loading ? <span className="dshmcp-spin" /> : <RefreshIcon size={14} />}
         </button>
       </div>
 
       <div className="dshmcp-toolbar">
-        <button type="button" className="dshmcp-btn dshmcp-btn-primary dshmcp-btn-sm" onClick={beginAdd} disabled={busy !== null}>
-          <PlusIcon size={12} /> Add server
+        <button
+          type="button"
+          className="dshmcp-btn dshmcp-btn-primary dshmcp-btn-sm"
+          onClick={beginAdd}
+          disabled={actionsDisabled}
+          title={editingId !== null ? t('formEditTitle', { name: servers.find((s) => s.id === editingId)?.serverName ?? editingId }) : undefined}
+        >
+          <PlusIcon size={12} /> {t('addServer')}
         </button>
         <span className="dshmcp-spacer" />
         <span className="dshmcp-meta">
-          <span>{summary.connected} connected</span>
-          {summary.failed > 0 ? <span className="dshmcp-probe-bad">{summary.failed} failed</span> : null}
-          <span>{summary.enabled}/{summary.total} enabled</span>
+          <span>{t('connected', { count: String(summary.connected) })}</span>
+          {summary.failed > 0 ? <span className="dshmcp-probe-bad">{t('failed', { count: String(summary.failed) })}</span> : null}
+          <span>{t('enabledOf', { count: String(summary.enabled), total: String(summary.total) })}</span>
         </span>
       </div>
 
       {error !== null ? <div className="dshmcp-error">{error}</div> : null}
 
-      {showForm ? (
+      {adding ? (
         <ServerForm
           ctx={ctx}
-          initial={editing ?? undefined}
+          t={t}
+          initial={undefined}
           existingIds={new Set(servers.map((s) => s.id))}
           existingNames={new Set(servers.map((s) => s.serverName))}
           busy={busy !== null}
-          onCancel={() => setShowForm(false)}
-          onSaved={(label) => {
-            setShowForm(false)
-            setEditing(null)
-            void run(() => Promise.resolve(), label)
+          onCancel={closeForms}
+          onSaved={() => {
+            closeForms()
+            void run(() => Promise.resolve(), 'form:add')
           }}
         />
       ) : null}
 
       {loading && servers.length === 0 ? (
-        <div className="dshmcp-empty"><span className="dshmcp-spin" /> Loading servers…</div>
+        <div className="dshmcp-empty"><span className="dshmcp-spin" /> {t('loading')}</div>
       ) : null}
 
       {!loading && servers.length === 0 ? (
         <div className="dshmcp-empty">
-          No MCP servers configured.
+          {t('empty')}
           <br />
-          Use “Add server” to connect one.
+          {t('emptyHint')}
         </div>
       ) : null}
 
       {servers.map((server) => {
+        if (server.id === editingId) {
+          return (
+            <ServerForm
+              key={server.id}
+              ctx={ctx}
+              t={t}
+              initial={server}
+              existingIds={new Set(servers.map((s) => s.id))}
+              existingNames={new Set(servers.map((s) => s.serverName))}
+              busy={busy !== null}
+              onCancel={closeForms}
+              onSaved={() => {
+                closeForms()
+                void run(() => Promise.resolve(), `form:update:${server.id}`)
+              }}
+            />
+          )
+        }
         const status = statusOf(server)
         const probe = probes[server.id]
         return (
@@ -223,7 +279,7 @@ export function McpManagerSection({ ctx }: SectionProps): JSX.Element {
             <div className="dshmcp-card-head">
               <span className={`dshmcp-status dshmcp-status-${status.tone}`}>
                 <span className="dshmcp-status-dot" />
-                {status.label}
+                {t(status.key, status.count !== undefined ? { count: status.count } : undefined)}
               </span>
               <span className="dshmcp-spacer" />
               <span className="dshmcp-id" title={server.id}>{server.id}</span>
@@ -234,37 +290,40 @@ export function McpManagerSection({ ctx }: SectionProps): JSX.Element {
             </div>
             <div className="dshmcp-meta">
               <span>{server.transport}</span>
-              <span>{server.toolCount} tool{server.toolCount === 1 ? '' : 's'}</span>
-              {!server.userManaged ? <span>bundle-defined</span> : null}
+              <span>{t('toolCount', { count: String(server.toolCount) })}</span>
+              {!server.userManaged ? <span>{t('bundleDefined')}</span> : null}
               {server.failOnStartupError === true ? <span>failOnStartupError</span> : null}
-              {server.reconnect?.enabled === false ? <span>reconnect off</span> : null}
+              {server.reconnect?.enabled === false ? <span>{t('reconnectOff')}</span> : null}
             </div>
             {probe !== undefined ? (
               <div className={`dshmcp-probe ${probe.ok ? 'dshmcp-probe-ok' : 'dshmcp-probe-bad'}`}>
                 {probe.ok
-                  ? `✓ Connected in ${probe.latencyMs}ms${probe.toolCount !== undefined ? ` · ${probe.toolCount} tools` : ''}`
-                  : `✗ ${probe.error ?? 'failed'} (${probe.latencyMs}ms)`}
+                  ? t('probeOk', {
+                      ms: String(probe.latencyMs),
+                      count: probe.toolCount !== undefined ? String(probe.toolCount) : '?',
+                    })
+                  : t('probeFail', { error: probe.error ?? 'failed', ms: String(probe.latencyMs) })}
               </div>
             ) : null}
             <div className="dshmcp-actions">
-              <button type="button" className="dshmcp-btn dshmcp-btn-sm" onClick={() => toggleEnabled(server)} disabled={busy !== null}>
-                <PowerIcon size={12} /> {server.enabled ? 'Disable' : 'Enable'}
+              <button type="button" className="dshmcp-btn dshmcp-btn-sm" onClick={() => toggleEnabled(server)} disabled={actionsDisabled}>
+                <PowerIcon size={12} /> {server.enabled ? t('disable') : t('enable')}
               </button>
-              <button type="button" className="dshmcp-btn dshmcp-btn-sm" onClick={() => testConnection(server)} disabled={busy !== null}>
-                {busy === `probe:${server.id}` ? <span className="dshmcp-spin" /> : <PlugIcon size={12} />} Test
+              <button type="button" className="dshmcp-btn dshmcp-btn-sm" onClick={() => testConnection(server)} disabled={actionsDisabled}>
+                {busy === `probe:${server.id}` ? <span className="dshmcp-spin" /> : <PlugIcon size={12} />} {t('test')}
               </button>
-              <button type="button" className="dshmcp-btn dshmcp-btn-sm" onClick={() => beginEdit(server)} disabled={busy !== null}>
-                <EditIcon size={12} /> Edit
+              <button type="button" className="dshmcp-btn dshmcp-btn-sm" onClick={() => beginEdit(server)} disabled={actionsDisabled}>
+                <EditIcon size={12} /> {t('edit')}
               </button>
               <span className="dshmcp-spacer" />
               <button
                 type="button"
                 className="dshmcp-btn dshmcp-btn-sm dshmcp-btn-danger"
                 onClick={() => removeServer(server)}
-                disabled={busy !== null}
-                title={server.userManaged ? 'Remove from cordis.patch.yml' : 'Removes the user-patch override (bundle-defined entry stays disabled only if applicable)'}
+                disabled={actionsDisabled}
+                title={server.userManaged ? t('remove') : t('bundleDefined')}
               >
-                <TrashIcon size={12} /> Remove
+                <TrashIcon size={12} /> {t('remove')}
               </button>
             </div>
           </div>
@@ -273,7 +332,7 @@ export function McpManagerSection({ ctx }: SectionProps): JSX.Element {
 
       {patchInfo !== null ? (
         <div className="dshmcp-footer" title={patchInfo.path}>
-          {patchInfo.exists ? patchInfo.path : `patch file missing: ${patchInfo.path}`}
+          {patchInfo.exists ? patchInfo.path : t('patchMissing', { path: patchInfo.path })}
         </div>
       ) : null}
     </div>
@@ -282,12 +341,13 @@ export function McpManagerSection({ ctx }: SectionProps): JSX.Element {
 
 interface ServerFormProps {
   ctx: ClientContext
+  t: TranslateNS<typeof NS>
   initial?: McpServerInfo
   existingIds: Set<string>
   existingNames: Set<string>
   busy: boolean
   onCancel: () => void
-  onSaved: (label: string) => void
+  onSaved: () => void
 }
 
 interface FormState {
@@ -339,6 +399,19 @@ function splitLines(text: string): string[] {
   return text.split(/\r?\n/).map((line) => line.trim()).filter((line) => line !== '')
 }
 
+/** Trim surrounding quotes from a pasted JSON-style key/value pair. */
+function stripQuotes(value: string): string {
+  const trimmed = value.trim()
+  if (trimmed.length >= 2) {
+    const first = trimmed[0]
+    const last = trimmed[trimmed.length - 1]
+    if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
+      return trimmed.slice(1, -1).trim()
+    }
+  }
+  return trimmed
+}
+
 function parsePairs(text: string): Record<string, string> | undefined {
   const lines = splitLines(text)
   if (lines.length === 0) return undefined
@@ -348,7 +421,7 @@ function parsePairs(text: string): Record<string, string> | undefined {
     const colon = line.indexOf(':')
     const sep = eq === -1 ? colon : colon === -1 ? eq : Math.min(eq, colon)
     if (sep <= 0) continue
-    out[line.slice(0, sep).trim()] = line.slice(sep + 1).trim()
+    out[stripQuotes(line.slice(0, sep))] = stripQuotes(line.slice(sep + 1))
   }
   return out
 }
@@ -378,10 +451,11 @@ function toConfig(form: FormState): McpServerConfig {
 }
 
 /**
- * Add/edit server form with per-field validation feedback.
+ * Add/edit server form with per-field validation feedback. Localized labels
+ * and validation messages; when editing, the id field is locked.
  * @param props - form context and callbacks.
  */
-function ServerForm({ ctx, initial, existingIds, existingNames, busy, onCancel, onSaved }: ServerFormProps): JSX.Element {
+function ServerForm({ ctx, t, initial, existingIds, existingNames, busy, onCancel, onSaved }: ServerFormProps): JSX.Element {
   const editing = initial !== undefined
   const [form, setForm] = useState<FormState>(() => toForm(initial))
   const [fieldErrors, setFieldErrors] = useState<McpFieldErrors>({})
@@ -394,14 +468,14 @@ function ServerForm({ ctx, initial, existingIds, existingNames, busy, onCancel, 
 
   const validateLocal = (): McpFieldErrors => {
     const errors: McpFieldErrors = {}
-    if (form.id.trim() === '') errors['id'] = 'Entry id is required'
-    else if (!/^[A-Za-z0-9_-]{1,64}$/.test(form.id.trim())) errors['id'] = 'Match [A-Za-z0-9_-]{1,64}'
-    else if (!editing && existingIds.has(form.id.trim())) errors['id'] = 'Entry id already in use'
-    if (form.serverName.trim() === '') errors['serverName'] = 'serverName is required'
-    else if (!/^[A-Za-z0-9_-]{1,32}$/.test(form.serverName.trim())) errors['serverName'] = 'Match [A-Za-z0-9_-]{1,32}'
-    else if (!editing && existingNames.has(form.serverName.trim())) errors['serverName'] = 'serverName already in use'
-    if (form.transport === 'streamable-http' && form.url.trim() === '') errors['url'] = 'URL is required'
-    if (form.transport === 'stdio' && form.command.trim() === '') errors['command'] = 'Command is required'
+    if (form.id.trim() === '') errors['id'] = t('errIdRequired')
+    else if (!/^[A-Za-z0-9_-]{1,64}$/.test(form.id.trim())) errors['id'] = t('errIdPattern')
+    else if (!editing && existingIds.has(form.id.trim())) errors['id'] = t('errIdTaken')
+    if (form.serverName.trim() === '') errors['serverName'] = t('errNameRequired')
+    else if (!/^[A-Za-z0-9_-]{1,32}$/.test(form.serverName.trim())) errors['serverName'] = t('errNamePattern')
+    else if (!editing && existingNames.has(form.serverName.trim())) errors['serverName'] = t('errNameTaken')
+    if (form.transport === 'streamable-http' && form.url.trim() === '') errors['url'] = t('errUrlRequired')
+    if (form.transport === 'stdio' && form.command.trim() === '') errors['command'] = t('errCommandRequired')
     return errors
   }
 
@@ -418,10 +492,10 @@ function ServerForm({ ctx, initial, existingIds, existingNames, busy, onCancel, 
       } else {
         await callRpc(ctx, 'add', payload)
       }
-      onSaved(editing ? `update:${payload.id}` : `add:${payload.id}`)
+      onSaved()
     } catch (err) {
       if (err instanceof McpManagerRpcError && err.fields !== undefined) setFieldErrors(err.fields)
-      setSubmitError(errorMessage(err))
+      setSubmitError(errorMessage(err, t))
     } finally {
       setSaving(false)
     }
@@ -434,12 +508,12 @@ function ServerForm({ ctx, initial, existingIds, existingNames, busy, onCancel, 
   return (
     <div className="dshmcp-form">
       <div className="dshmcp-form-title">
-        {editing ? `Edit ${initial!.serverName}` : 'Add MCP server'}
+        {editing ? t('formEditTitle', { name: initial!.serverName }) : t('formAddTitle')}
       </div>
 
       <div className="dshmcp-field-row">
         <div className="dshmcp-field">
-          <label className="dshmcp-label" htmlFor="dshmcp-id">Entry id</label>
+          <label className="dshmcp-label" htmlFor="dshmcp-id">{t('fieldId')}</label>
           <input
             id="dshmcp-id"
             className={inputClass('id')}
@@ -452,7 +526,7 @@ function ServerForm({ ctx, initial, existingIds, existingNames, busy, onCancel, 
           {err('id') !== undefined ? <p className="dshmcp-hint">{err('id')}</p> : null}
         </div>
         <div className="dshmcp-field">
-          <label className="dshmcp-label" htmlFor="dshmcp-server">serverName</label>
+          <label className="dshmcp-label" htmlFor="dshmcp-server">{t('fieldServerName')}</label>
           <input
             id="dshmcp-server"
             className={inputClass('serverName')}
@@ -467,7 +541,7 @@ function ServerForm({ ctx, initial, existingIds, existingNames, busy, onCancel, 
       </div>
 
       <div className="dshmcp-field">
-        <label className="dshmcp-label" htmlFor="dshmcp-transport">Transport</label>
+        <label className="dshmcp-label" htmlFor="dshmcp-transport">{t('fieldTransport')}</label>
         <select
           id="dshmcp-transport"
           className="dshmcp-select"
@@ -482,7 +556,7 @@ function ServerForm({ ctx, initial, existingIds, existingNames, busy, onCancel, 
 
       {form.transport === 'streamable-http' ? (
         <div className="dshmcp-field">
-          <label className="dshmcp-label" htmlFor="dshmcp-url">URL</label>
+          <label className="dshmcp-label" htmlFor="dshmcp-url">{t('fieldUrl')}</label>
           <input
             id="dshmcp-url"
             className={inputClass('url')}
@@ -497,7 +571,7 @@ function ServerForm({ ctx, initial, existingIds, existingNames, busy, onCancel, 
       ) : (
         <>
           <div className="dshmcp-field">
-            <label className="dshmcp-label" htmlFor="dshmcp-command">Command</label>
+            <label className="dshmcp-label" htmlFor="dshmcp-command">{t('fieldCommand')}</label>
             <input
               id="dshmcp-command"
               className={inputClass('command')}
@@ -510,7 +584,7 @@ function ServerForm({ ctx, initial, existingIds, existingNames, busy, onCancel, 
             {err('command') !== undefined ? <p className="dshmcp-hint">{err('command')}</p> : null}
           </div>
           <div className="dshmcp-field">
-            <label className="dshmcp-label" htmlFor="dshmcp-args">Args (one per line)</label>
+            <label className="dshmcp-label" htmlFor="dshmcp-args">{t('fieldArgs')}</label>
             <textarea
               id="dshmcp-args"
               className="dshmcp-input"
@@ -523,7 +597,7 @@ function ServerForm({ ctx, initial, existingIds, existingNames, busy, onCancel, 
             />
           </div>
           <div className="dshmcp-field">
-            <label className="dshmcp-label" htmlFor="dshmcp-env">Env (KEY=VALUE, one per line)</label>
+            <label className="dshmcp-label" htmlFor="dshmcp-env">{t('fieldEnv')}</label>
             <textarea
               id="dshmcp-env"
               className="dshmcp-input"
@@ -536,7 +610,7 @@ function ServerForm({ ctx, initial, existingIds, existingNames, busy, onCancel, 
             />
           </div>
           <div className="dshmcp-field">
-            <label className="dshmcp-label" htmlFor="dshmcp-cwd">Working directory (optional)</label>
+            <label className="dshmcp-label" htmlFor="dshmcp-cwd">{t('fieldCwd')}</label>
             <input
               id="dshmcp-cwd"
               className="dshmcp-input"
@@ -550,7 +624,7 @@ function ServerForm({ ctx, initial, existingIds, existingNames, busy, onCancel, 
       )}
 
       <div className="dshmcp-field">
-        <label className="dshmcp-label" htmlFor="dshmcp-headers">Headers (Key: Value, one per line)</label>
+        <label className="dshmcp-label" htmlFor="dshmcp-headers">{t('fieldHeaders')}</label>
         <textarea
           id="dshmcp-headers"
           className="dshmcp-input"
@@ -565,7 +639,7 @@ function ServerForm({ ctx, initial, existingIds, existingNames, busy, onCancel, 
 
       <div className="dshmcp-field-row">
         <div className="dshmcp-field">
-          <label className="dshmcp-label" htmlFor="dshmcp-timeout">toolCallTimeoutMs (optional)</label>
+          <label className="dshmcp-label" htmlFor="dshmcp-timeout">{t('fieldTimeout')}</label>
           <input
             id="dshmcp-timeout"
             className="dshmcp-input"
@@ -584,7 +658,7 @@ function ServerForm({ ctx, initial, existingIds, existingNames, busy, onCancel, 
               disabled={saving || busy}
               onChange={(e) => set('failOnStartupError', e.target.checked)}
             />
-            failOnStartupError
+            {t('fieldFailStartup')}
           </label>
         </div>
       </div>
@@ -593,10 +667,10 @@ function ServerForm({ ctx, initial, existingIds, existingNames, busy, onCancel, 
 
       <div className="dshmcp-form-actions">
         <button type="button" className="dshmcp-btn dshmcp-btn-sm" onClick={onCancel} disabled={saving}>
-          Cancel
+          {t('cancel')}
         </button>
         <button type="button" className="dshmcp-btn dshmcp-btn-sm dshmcp-btn-primary" onClick={() => void submit()} disabled={saving || busy}>
-          {saving ? <span className="dshmcp-spin" /> : null} {editing ? 'Save changes' : 'Add server'}
+          {saving ? <span className="dshmcp-spin" /> : null} {editing ? t('save') : t('addServer')}
         </button>
       </div>
     </div>
