@@ -28,24 +28,24 @@
 
 ### One-liner
 
-**macOS / Linux** (also Git Bash / WSL on Windows; available once the package is published):
+**macOS / Linux** (also Git Bash / WSL on Windows):
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Js2Hou/dsh-mcp-manager/main/scripts/install.sh | bash
 ```
 
-**Windows (PowerShell 5.1+ / pwsh; available once published)**:
+**Windows (PowerShell 5.1+ / pwsh)**:
 
 ```powershell
 irm https://raw.githubusercontent.com/Js2Hou/dsh-mcp-manager/main/scripts/install.ps1 | iex
 ```
 
-> Until the package is on npm, use the **local install** below (or run `.\scripts\install.ps1` from a clone of this repo — the script detects the checkout and installs it via `link:`).
+The script installs `@js2hou/dsh-mcp-manager` from npm and mounts it automatically. To work against the local source, run `.\scripts\install.ps1` from a clone of this repo instead (the script detects the checkout and installs it via `link:`).
 
 Then **hard-refresh the browser** (Cmd/Ctrl+Shift+R) and open **Settings → MCP**. If the MCP tab does not appear, restart DSH once (first-time host mounting).
 
 <details>
-<summary><b>Local install (recommended for now; from a clone)</b></summary>
+<summary><b>Local install (development; from a clone)</b></summary>
 
 Clone/copy the repo anywhere, then from the repo root:
 

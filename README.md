@@ -28,24 +28,24 @@
 
 ### 一键安装
 
-**macOS / Linux**（Windows 装了 Git Bash 或 WSL 也可；包发布后可用）：
+**macOS / Linux**（Windows 装了 Git Bash 或 WSL 也可）：
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Js2Hou/dsh-mcp-manager/main/scripts/install.sh | bash
 ```
 
-**Windows（PowerShell 5.1+ / pwsh；包发布后可用）**：
+**Windows（PowerShell 5.1+ / pwsh）**：
 
 ```powershell
 irm https://raw.githubusercontent.com/Js2Hou/dsh-mcp-manager/main/scripts/install.ps1 | iex
 ```
 
-> 包尚未发布到 npm 时，请用「本地安装」方式（下面手动安装第 ③ 步改用 `link:` 路径，或直接在仓库 clone 里执行 `.\scripts\install.ps1`——脚本检测到本地 checkout 会自动用 `link:` 安装）。
+一键脚本会从 npm 安装 `@js2hou/dsh-mcp-manager` 并自动挂载；想基于本地源码调试时，直接在仓库 clone 里执行 `.\scripts\install.ps1`（脚本检测到本地 checkout 会自动用 `link:` 安装）。
 
 装完**硬刷新浏览器**（Cmd/Ctrl+Shift+R），打开 **设置 → MCP** 即可看到管理页。若未出现 MCP 页签，重启一次 DSH（host 半首次挂载需要）。
 
 <details>
-<summary><b>本地安装（当前推荐；从仓库 clone 安装）</b></summary>
+<summary><b>本地安装（开发调试；从仓库 clone 安装）</b></summary>
 
 把仓库 clone/复制到任意目录后，在仓库根目录执行：
 
