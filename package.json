@@ -17,6 +17,9 @@
     "./package.json": "./package.json"
   },
   "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
     "client": {
       "inject": [
         "@deepseek-ai/dsh-client-runtime",
@@ -28,7 +31,8 @@
     }
   },
   "files": [
-    "lib"
+    "lib",
+    "cordis.patch.yml"
   ],
   "scripts": {
     "build": "node scripts/build.mjs",
