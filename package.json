@@ -53,6 +53,9 @@
     "typescript": "^5.9.0"
   },
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild"

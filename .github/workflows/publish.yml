@@ -1,0 +1,49 @@
+name: Publish to npm
+
+# 推送到 GitHub 后自动发布到 npm：
+#   1) 打标签  git tag v0.1.0 && git push origin v0.1.0
+#   2) 或手动  Actions → “Publish to npm” → Run workflow
+# 需要先在仓库设置里配置 NPM_TOKEN secret（npmjs.com → Access tokens →
+# Automation/publish token）。
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Verify tag matches package version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG="$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::tag v${TAG} does not match package.json version ${PKG}"
+            exit 1
+          fi
+
+      - name: Publish to npm
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

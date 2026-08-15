@@ -1,0 +1,4 @@
+# pnpm 11 默认拦截依赖的构建脚本；放行 esbuild 的 postinstall（其二进制也可
+# 通过平台包直接解析，但放行可避免 pnpm install 以 ERR_PNPM_IGNORED_BUILDS 退出）。
+allowBuilds:
+  esbuild: true
