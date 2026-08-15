@@ -1,0 +1,64 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node"],
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "verbatimModuleSyntax": false,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "declaration": false,
+    "sourceMap": false,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@deepseek-ai/cordis": [
+        "D:/ProgramFiles/DeepSeekHarness/DeepSeek Harness/resources/host/node_modules/@deepseek-ai/cordis/lib/types/index.d.ts"
+      ],
+      "@deepseek-ai/cordis-plugin-loader": [
+        "D:/ProgramFiles/DeepSeekHarness/DeepSeek Harness/resources/host/node_modules/@deepseek-ai/cordis-plugin-loader/lib/types/index.d.ts"
+      ],
+      "@deepseek-ai/dsh-home-paths": [
+        "D:/ProgramFiles/DeepSeekHarness/DeepSeek Harness/resources/host/node_modules/@deepseek-ai/dsh-home-paths/lib/types/index.d.ts"
+      ],
+      "@deepseek-ai/dsh-tools": [
+        "D:/ProgramFiles/DeepSeekHarness/DeepSeek Harness/resources/host/node_modules/@deepseek-ai/dsh-tools/lib/types/index.d.ts"
+      ],
+      "@deepseek-ai/dsh-client-runtime": [
+        "D:/ProgramFiles/DeepSeekHarness/DeepSeek Harness/resources/host/node_modules/@deepseek-ai/dsh-client-runtime/lib/types/index.d.ts"
+      ],
+      "@deepseek-ai/dsh-client-runtime/client": [
+        "D:/ProgramFiles/DeepSeekHarness/DeepSeek Harness/resources/host/node_modules/@deepseek-ai/dsh-client-runtime/lib/types/client/index.d.ts"
+      ],
+      "@deepseek-ai/dsh-client-ui-slots": [
+        "D:/ProgramFiles/DeepSeekHarness/DeepSeek Harness/resources/host/node_modules/@deepseek-ai/dsh-client-ui-slots/lib/types/index.d.ts"
+      ],
+      "@deepseek-ai/dsh-client-connection": [
+        "D:/ProgramFiles/DeepSeekHarness/DeepSeek Harness/resources/host/node_modules/@deepseek-ai/dsh-client-connection/lib/types/index.d.ts"
+      ],
+      "@deepseek-ai/dsh-client-connection/client": [
+        "D:/ProgramFiles/DeepSeekHarness/DeepSeek Harness/resources/host/node_modules/@deepseek-ai/dsh-client-connection/lib/types/client/index.d.ts"
+      ],
+      "@deepseek-ai/dsh-client-ui-sidebar": [
+        "D:/ProgramFiles/DeepSeekHarness/DeepSeek Harness/resources/host/node_modules/@deepseek-ai/dsh-client-ui-sidebar/lib/types/index.d.ts"
+      ],
+      "@deepseek-ai/dsh-client-ui-sidebar/client": [
+        "D:/ProgramFiles/DeepSeekHarness/DeepSeek Harness/resources/host/node_modules/@deepseek-ai/dsh-client-ui-sidebar/lib/types/client/index.d.ts"
+      ],
+      "@deepseek-ai/dsh-client-ui-settings": [
+        "D:/ProgramFiles/DeepSeekHarness/DeepSeek Harness/resources/host/node_modules/@deepseek-ai/dsh-client-ui-settings/lib/types/index.d.ts"
+      ],
+      "@deepseek-ai/dsh-client-ui-settings/client": [
+        "D:/ProgramFiles/DeepSeekHarness/DeepSeek Harness/resources/host/node_modules/@deepseek-ai/dsh-client-ui-settings/lib/types/client/index.d.ts"
+      ]
+    }
+  },
+  "include": ["src"]
+}

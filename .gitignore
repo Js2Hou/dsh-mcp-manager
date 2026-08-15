@@ -1,0 +1,10 @@
+# dependencies / build output
+node_modules/
+lib/
+
+# logs & editor noise
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
