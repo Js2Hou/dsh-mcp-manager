@@ -21,11 +21,12 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 11
+          version: 11.9.0
 
+      # pnpm 11 requires Node >= 22.13 (Node 20 fails instantly).
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           registry-url: https://registry.npmjs.org
 
       - name: Install dependencies
