@@ -31,13 +31,13 @@
 **macOS / Linux**（Windows 装了 Git Bash 或 WSL 也可；包发布后可用）：
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/omdsh-dev/dsh-mcp-manager/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Js2Hou/dsh-mcp-manager/main/scripts/install.sh | bash
 ```
 
 **Windows（PowerShell 5.1+ / pwsh；包发布后可用）**：
 
 ```powershell
-irm https://raw.githubusercontent.com/omdsh-dev/dsh-mcp-manager/main/scripts/install.ps1 | iex
+irm https://raw.githubusercontent.com/Js2Hou/dsh-mcp-manager/main/scripts/install.ps1 | iex
 ```
 
 > 包尚未发布到 npm 时，请用「本地安装」方式（下面手动安装第 ③ 步改用 `link:` 路径，或直接在仓库 clone 里执行 `.\scripts\install.ps1`——脚本检测到本地 checkout 会自动用 `link:` 安装）。
@@ -57,7 +57,7 @@ bash scripts/install.sh
 powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1
 ```
 
-脚本检测到这是 `dsh-mcp-manager` 的 checkout，会自动用 `link:` 方式安装到 `~/.dsh/profiles/web` 并挂载。也可显式指定其他路径：
+脚本检测到这是 `@js2hou/dsh-mcp-manager` 的 checkout，会自动用 `link:` 方式安装到 `~/.dsh/profiles/web` 并挂载。也可显式指定其他路径：
 
 ```powershell
 .\scripts\install.ps1 -Path C:\path\to\dsh-mcp-manager -Restart
@@ -74,10 +74,10 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1
 cd ~/.dsh/profiles/web
 
 # ① 放行「发布不足 24h」的新版本（装老版本可跳过；若已有该键，把下面那行并入其下即可）
-printf '\nminimumReleaseAgeExclude:\n  - dsh-mcp-manager\n' >> pnpm-workspace.yaml
+printf '\nminimumReleaseAgeExclude:\n  - @js2hou/dsh-mcp-manager\n' >> pnpm-workspace.yaml
 
 # ② 安装并自动挂载（npm 包；本地 checkout 请用 link: 绝对路径）
-npx -y --package @deepseek-ai/dsh dsh plugin --profile web add dsh-mcp-manager
+npx -y --package @deepseek-ai/dsh dsh plugin --profile web add @js2hou/dsh-mcp-manager
 ```
 
 **Windows（PowerShell）**：
@@ -85,14 +85,14 @@ npx -y --package @deepseek-ai/dsh dsh plugin --profile web add dsh-mcp-manager
 ```powershell
 cd ~\.dsh\profiles\web
 
-# ① 放行新版本（一次性；若已有该键，把 - dsh-mcp-manager 并入其下即可）
-Add-Content -Path pnpm-workspace.yaml -Value "`nminimumReleaseAgeExclude:`n  - dsh-mcp-manager"
+# ① 放行新版本（一次性；若已有该键，把 - @js2hou/dsh-mcp-manager 并入其下即可）
+Add-Content -Path pnpm-workspace.yaml -Value "`nminimumReleaseAgeExclude:`n  - @js2hou/dsh-mcp-manager"
 
 # ② 安装并自动挂载
-npx -y --package @deepseek-ai/dsh dsh plugin --profile web add dsh-mcp-manager
+npx -y --package @deepseek-ai/dsh dsh plugin --profile web add @js2hou/dsh-mcp-manager
 ```
 
-> `dsh plugin --profile web add` 会自动：登记依赖 → 识别包内 `dsh.bundle.patch` → 注册进 `dsh.profile.bundles` 挂载 → 无需手改 `cordis.patch.yml`。本地 checkout 用 `dsh plugin --profile web add "link:C:/绝对路径/dsh-mcp-manager"` 同理。
+> `dsh plugin --profile web add` 会自动：登记依赖 → 识别包内 `dsh.bundle.patch` → 注册进 `dsh.profile.bundles` 挂载 → 无需手改 `cordis.patch.yml`。本地 checkout 用 `dsh plugin --profile web add "link:C:/绝对路径/@js2hou/dsh-mcp-manager"` 同理。
 
 </details>
 
@@ -106,7 +106,7 @@ npx -y --package @deepseek-ai/dsh dsh plugin --profile web add dsh-mcp-manager
 3. 清理旧版残留的手动挂载行（`cordis.patch.yml` 中 id 为 `mcp-manager` 的 insert 块），避免「双挂载」（页面出现两个 MCP 页签）；
 4. 执行 `dsh plugin --profile web add <包名|link:路径>`：登记依赖 → 识别包内 `dsh.bundle.patch` → 自动注册进 `dsh.profile.bundles` 挂载。
 
-`curl | bash` / `irm | iex` 会执行远程代码——脚本已随仓库开源（`scripts/install.sh` / `scripts/install.ps1`），可先下载审阅。插件以 npm 包 `dsh-mcp-manager` 发布，通过 `dsh.bundle.patch`（随包的 `cordis.patch.yml`）由官方 CLI 自动挂载，**不修改 DSH 源码**。
+`curl | bash` / `irm | iex` 会执行远程代码——脚本已随仓库开源（`scripts/install.sh` / `scripts/install.ps1`），可先下载审阅。插件以 npm 包 `@js2hou/dsh-mcp-manager` 发布，通过 `dsh.bundle.patch`（随包的 `cordis.patch.yml`）由官方 CLI 自动挂载，**不修改 DSH 源码**。
 
 </details>
 
@@ -114,7 +114,7 @@ npx -y --package @deepseek-ai/dsh dsh plugin --profile web add dsh-mcp-manager
 <summary><b>更新</b></summary>
 
 ```sh
-dsh plugin --profile web add dsh-mcp-manager
+dsh plugin --profile web add @js2hou/dsh-mcp-manager
 ```
 
 或重跑一次一键脚本；也可把 `~/.dsh/profiles/web/package.json` 里的版本号改高后 `pnpm install`。本地 checkout 模式：`git pull` 后 `pnpm build`（client 改动硬刷新浏览器即可；host 改动需重启 DSH）。
@@ -150,8 +150,8 @@ dsh plugin --profile web add dsh-mcp-manager
 
    # 方式二：GitHub Actions 页面 → “Publish to npm” → Run workflow（手动触发）
    ```
-3. 工作流自动执行：`pnpm install` → `pnpm build` → 校验标签与版本一致 → `npm publish`（`publishConfig.access: public`，包名 `dsh-mcp-manager` 无 scope，公开发布）。
-4. 发布完成后即可一键安装：`npx -y --package @deepseek-ai/dsh dsh plugin --profile web add dsh-mcp-manager`，或直接 `irm | iex` / `curl | bash`。
+3. 工作流自动执行：`pnpm install` → `pnpm build` → 校验标签与版本一致 → `npm publish`（`publishConfig.access: public`，包名 `@js2hou/dsh-mcp-manager` 无 scope，公开发布）。
+4. 发布完成后即可一键安装：`npx -y --package @deepseek-ai/dsh dsh plugin --profile web add @js2hou/dsh-mcp-manager`，或直接 `irm | iex` / `curl | bash`。
 
 ## 📖 使用说明
 

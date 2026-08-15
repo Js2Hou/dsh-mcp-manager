@@ -5,4 +5,4 @@
 # `dsh.client` declaration.
 - insert:
     - id: mcp-manager
-      name: 'dsh-mcp-manager'
+      name: '@js2hou/dsh-mcp-manager'

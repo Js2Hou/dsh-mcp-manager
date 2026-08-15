@@ -12,7 +12,7 @@
 # Flags: --restart (best-effort relaunch of the desktop app), --dry-run.
 set -euo pipefail
 
-PACKAGE="${1:-dsh-mcp-manager}"
+PACKAGE="${1:-@js2hou/dsh-mcp-manager}"
 RESTART=0
 DRY_RUN=0
 for arg in "${@:2}"; do
@@ -55,7 +55,7 @@ resolve_dsh() {
 IS_LOCAL_REPO=0
 if [ -f "$REPO_ROOT/package.json" ]; then
   NAME="$(node -e "process.stdout.write(require('$REPO_ROOT/package.json').name || '')" 2>/dev/null || true)"
-  [ "$NAME" = "dsh-mcp-manager" ] && IS_LOCAL_REPO=1
+  [ "$NAME" = "@js2hou/dsh-mcp-manager" ] && IS_LOCAL_REPO=1
 fi
 if [ "$IS_LOCAL_REPO" -eq 1 ]; then
   SPEC="link:$REPO_ROOT"

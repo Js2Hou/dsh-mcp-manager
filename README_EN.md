@@ -31,13 +31,13 @@
 **macOS / Linux** (also Git Bash / WSL on Windows; available once the package is published):
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/omdsh-dev/dsh-mcp-manager/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Js2Hou/dsh-mcp-manager/main/scripts/install.sh | bash
 ```
 
 **Windows (PowerShell 5.1+ / pwsh; available once published)**:
 
 ```powershell
-irm https://raw.githubusercontent.com/omdsh-dev/dsh-mcp-manager/main/scripts/install.ps1 | iex
+irm https://raw.githubusercontent.com/Js2Hou/dsh-mcp-manager/main/scripts/install.ps1 | iex
 ```
 
 > Until the package is on npm, use the **local install** below (or run `.\scripts\install.ps1` from a clone of this repo — the script detects the checkout and installs it via `link:`).
@@ -57,7 +57,7 @@ bash scripts/install.sh
 powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1
 ```
 
-The script detects the `dsh-mcp-manager` checkout and installs it into `~/.dsh/profiles/web` via `link:`. You can also pass an explicit path:
+The script detects the `@js2hou/dsh-mcp-manager` checkout and installs it into `~/.dsh/profiles/web` via `link:`. You can also pass an explicit path:
 
 ```powershell
 .\scripts\install.ps1 -Path C:\path\to\dsh-mcp-manager -Restart
@@ -74,10 +74,10 @@ The script detects the `dsh-mcp-manager` checkout and installs it into `~/.dsh/p
 cd ~/.dsh/profiles/web
 
 # ① Exclude a freshly published version from pnpm's 24h minimum-release-age
-printf '\nminimumReleaseAgeExclude:\n  - dsh-mcp-manager\n' >> pnpm-workspace.yaml
+printf '\nminimumReleaseAgeExclude:\n  - @js2hou/dsh-mcp-manager\n' >> pnpm-workspace.yaml
 
 # ② Install + auto-mount (npm package; use an absolute link: path for a local checkout)
-npx -y --package @deepseek-ai/dsh dsh plugin --profile web add dsh-mcp-manager
+npx -y --package @deepseek-ai/dsh dsh plugin --profile web add @js2hou/dsh-mcp-manager
 ```
 
 **Windows (PowerShell)**:
@@ -86,13 +86,13 @@ npx -y --package @deepseek-ai/dsh dsh plugin --profile web add dsh-mcp-manager
 cd ~\.dsh\profiles\web
 
 # ① Exclude fresh versions (one-time; merge the line if the key already exists)
-Add-Content -Path pnpm-workspace.yaml -Value "`nminimumReleaseAgeExclude:`n  - dsh-mcp-manager"
+Add-Content -Path pnpm-workspace.yaml -Value "`nminimumReleaseAgeExclude:`n  - @js2hou/dsh-mcp-manager"
 
 # ② Install + auto-mount
-npx -y --package @deepseek-ai/dsh dsh plugin --profile web add dsh-mcp-manager
+npx -y --package @deepseek-ai/dsh dsh plugin --profile web add @js2hou/dsh-mcp-manager
 ```
 
-> `dsh plugin --profile web add` registers the dependency, detects the package's `dsh.bundle.patch`, and adds it to `dsh.profile.bundles` — no manual `cordis.patch.yml` edits needed. A local checkout works the same way: `dsh plugin --profile web add "link:C:/absolute/path/dsh-mcp-manager"`.
+> `dsh plugin --profile web add` registers the dependency, detects the package's `dsh.bundle.patch`, and adds it to `dsh.profile.bundles` — no manual `cordis.patch.yml` edits needed. A local checkout works the same way: `dsh plugin --profile web add "link:C:/absolute/path/@js2hou/dsh-mcp-manager"`.
 
 </details>
 
@@ -106,7 +106,7 @@ The one-liner does 4 idempotent steps:
 3. Removes any stale manual mount row (an `mcp-manager` insert block in `cordis.patch.yml`) to prevent double-mounting (two MCP tabs);
 4. Runs `dsh plugin --profile web add <package|link:path>`: registers the dependency, detects `dsh.bundle.patch`, and registers the package in `dsh.profile.bundles`.
 
-`curl | bash` / `irm | iex` execute remote code — the scripts are open source in this repo (`scripts/install.sh` / `scripts/install.ps1`); review them first. The plugin ships as the npm package `dsh-mcp-manager` and is auto-mounted by the official CLI through its `dsh.bundle.patch` (the bundled `cordis.patch.yml`) — **no DSH source modification**.
+`curl | bash` / `irm | iex` execute remote code — the scripts are open source in this repo (`scripts/install.sh` / `scripts/install.ps1`); review them first. The plugin ships as the npm package `@js2hou/dsh-mcp-manager` and is auto-mounted by the official CLI through its `dsh.bundle.patch` (the bundled `cordis.patch.yml`) — **no DSH source modification**.
 
 </details>
 
@@ -114,7 +114,7 @@ The one-liner does 4 idempotent steps:
 <summary><b>Update</b></summary>
 
 ```sh
-dsh plugin --profile web add dsh-mcp-manager
+dsh plugin --profile web add @js2hou/dsh-mcp-manager
 ```
 
 Or re-run the one-liner; alternatively bump the version in `~/.dsh/profiles/web/package.json` and run `pnpm install`. Local-checkout mode: `git pull` then `pnpm build` (client changes need only a hard refresh; host changes need a DSH restart).
@@ -150,8 +150,8 @@ After pushing to GitHub, a GitHub Actions workflow (`.github/workflows/publish.y
 
    # Option 2: GitHub Actions page → “Publish to npm” → Run workflow (manual)
    ```
-3. The workflow runs: `pnpm install` → `pnpm build` → verifies the tag matches the version → `npm publish` (`publishConfig.access: public`; the unscoped name `dsh-mcp-manager` publishes publicly).
-4. After publishing, one-line install: `npx -y --package @deepseek-ai/dsh dsh plugin --profile web add dsh-mcp-manager`, or `irm | iex` / `curl | bash`.
+3. The workflow runs: `pnpm install` → `pnpm build` → verifies the tag matches the version → `npm publish` (`publishConfig.access: public`; the unscoped name `@js2hou/dsh-mcp-manager` publishes publicly).
+4. After publishing, one-line install: `npx -y --package @deepseek-ai/dsh dsh plugin --profile web add @js2hou/dsh-mcp-manager`, or `irm | iex` / `curl | bash`.
 
 ## 📖 Usage
 
