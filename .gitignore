@@ -8,3 +8,7 @@ lib/
 Thumbs.db
 .vscode/
 .idea/
+
+# temp commit messages
+.commitmsg*
+

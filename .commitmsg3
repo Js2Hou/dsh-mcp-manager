@@ -1,6 +1,0 @@
-chore: rename npm package to @js2hou/dsh-mcp-manager
-
-The unscoped name dsh-mcp-manager is already taken on npm (0.5.0 by
-another author), so publish under the user's own scope. Updates package
-name, the bundle patch entry, install scripts' defaults and local-repo
-detection, and both READMEs' install commands / one-liner URLs.
