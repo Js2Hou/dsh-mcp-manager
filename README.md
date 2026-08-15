@@ -135,24 +135,6 @@ dsh plugin --profile web add @js2hou/dsh-mcp-manager
 
 </details>
 
-## 📦 自动发布到 npm
-
-推送到 GitHub 后，由 GitHub Actions（`.github/workflows/publish.yml`）自动构建并发布到 npm：
-
-1. **一次性配置**
-   - npm 账号：本机执行一次 `npm adduser`；
-   - 生成发布 token：npmjs.com → **Access Tokens** → *Generate New Token*（Automation / publish）；
-   - GitHub 仓库 → **Settings → Secrets and variables → Actions → New repository secret**：`NPM_TOKEN` = 上面的 token。
-2. **发布**（二选一）
-   ```sh
-   # 方式一：打版本标签（推荐；标签需与 package.json 的 version 一致）
-   git tag v0.1.0 && git push origin v0.1.0
-
-   # 方式二：GitHub Actions 页面 → “Publish to npm” → Run workflow（手动触发）
-   ```
-3. 工作流自动执行：`pnpm install` → `pnpm build` → 校验标签与版本一致 → `npm publish`（`publishConfig.access: public`，包名 `@js2hou/dsh-mcp-manager` 无 scope，公开发布）。
-4. 发布完成后即可一键安装：`npx -y --package @deepseek-ai/dsh dsh plugin --profile web add @js2hou/dsh-mcp-manager`，或直接 `irm | iex` / `curl | bash`。
-
 ## 📖 使用说明
 
 打开 **设置 → MCP**：

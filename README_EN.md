@@ -135,24 +135,6 @@ Or re-run the one-liner; alternatively bump the version in `~/.dsh/profiles/web/
 
 </details>
 
-## 📦 Auto-publish to npm
-
-After pushing to GitHub, a GitHub Actions workflow (`.github/workflows/publish.yml`) builds and publishes the package to npm automatically:
-
-1. **One-time setup**
-   - npm account: run `npm adduser` once locally;
-   - Generate a publish token: npmjs.com → **Access Tokens** → *Generate New Token* (Automation / publish);
-   - GitHub repo → **Settings → Secrets and variables → Actions → New repository secret**: `NPM_TOKEN` = the token above.
-2. **Publish** (either way)
-   ```sh
-   # Option 1: push a version tag (recommended; must match package.json version)
-   git tag v0.1.0 && git push origin v0.1.0
-
-   # Option 2: GitHub Actions page → “Publish to npm” → Run workflow (manual)
-   ```
-3. The workflow runs: `pnpm install` → `pnpm build` → verifies the tag matches the version → `npm publish` (`publishConfig.access: public`; the unscoped name `@js2hou/dsh-mcp-manager` publishes publicly).
-4. After publishing, one-line install: `npx -y --package @deepseek-ai/dsh dsh plugin --profile web add @js2hou/dsh-mcp-manager`, or `irm | iex` / `curl | bash`.
-
 ## 📖 Usage
 
 Open **Settings → MCP**:
