@@ -16,6 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      # Job-level so pnpm/.npmrc can read it (step-level env is too late and
+      # triggers "[WARN] Failed to replace env in config").
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v7
 
@@ -47,7 +51,20 @@ jobs:
             exit 1
           fi
 
+      # Skip publish when this exact version is already on npm (avoids
+      # EPUBLISHCONFLICT when re-running the workflow or re-tagging).
+      - name: Check if version already published
+        id: check-publish
+        run: |
+          PKG="$(node -p "require('./package.json').name")"
+          VER="$(node -p "require('./package.json').version")"
+          if npm view "${PKG}@${VER}" version >/dev/null 2>&1; then
+            echo "Version ${VER} already published — skipping publish"
+            echo "skip_publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip_publish=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish to npm
+        if: steps.check-publish.outputs.skip_publish != 'true'
         run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
