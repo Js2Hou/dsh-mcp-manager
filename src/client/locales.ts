@@ -13,6 +13,7 @@ export const NS = 'mcpManager'
 export type McpManagerKeys =
   | 'nav'
   | 'title'
+  | 'unnamed'
   | 'total'
   | 'addServer'
   | 'connected'
@@ -84,6 +85,7 @@ export type McpManagerDict = Record<McpManagerKeys, string>
 export const zh: McpManagerDict = {
   nav: 'MCP',
   title: 'MCP 服务器',
+  unnamed: '（未命名）',
   total: '共 {count} 个',
   addServer: '添加服务器',
   connected: '{count} 个已连接',
@@ -147,6 +149,7 @@ export const zh: McpManagerDict = {
 export const en: McpManagerDict = {
   nav: 'MCP',
   title: 'MCP servers',
+  unnamed: '(unnamed)',
   total: '{count} total',
   addServer: 'Add server',
   connected: '{count} connected',

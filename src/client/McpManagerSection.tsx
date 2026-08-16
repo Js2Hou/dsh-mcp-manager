@@ -284,7 +284,7 @@ export function McpManagerSection({ ctx }: SectionProps): JSX.Element {
               <span className="dshmcp-spacer" />
               <span className="dshmcp-id" title={server.id}>{server.id}</span>
             </div>
-            <div className="dshmcp-name">{server.serverName || '(unnamed)'}</div>
+            <div className="dshmcp-name">{server.serverName || t('unnamed')}</div>
             <div className="dshmcp-target" title={targetOf(server)}>
               {targetOf(server) || (server.transport === 'stdio' ? 'stdio' : server.url ?? 'streamable-http')}
             </div>
