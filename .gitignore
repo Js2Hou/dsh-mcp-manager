@@ -1,6 +1,9 @@
-# dependencies / build output
+# dependencies
 node_modules/
-lib/
+
+# NOTE: lib/ (built bundles) is intentionally COMMITTED so git-source installs
+# (`dsh plugin add github:Js2Hou/dsh-mcp-manager`) work without a build step.
+# Rebuild with `pnpm build` after source changes and commit the new lib/.
 
 # logs & editor noise
 *.log
