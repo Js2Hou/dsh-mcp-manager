@@ -292,7 +292,7 @@ export function McpManagerSection({ ctx }: SectionProps): JSX.Element {
               <span>{server.transport}</span>
               <span>{t('toolCount', { count: String(server.toolCount) })}</span>
               {!server.userManaged ? <span>{t('bundleDefined')}</span> : null}
-              {server.failOnStartupError === true ? <span>failOnStartupError</span> : null}
+              {server.failOnStartupError === true ? <span>{t('fieldFailStartup')}</span> : null}
               {server.reconnect?.enabled === false ? <span>{t('reconnectOff')}</span> : null}
             </div>
             {probe !== undefined ? (
