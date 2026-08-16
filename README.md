@@ -80,6 +80,9 @@ printf '\nminimumReleaseAgeExclude:\n  - @js2hou/dsh-mcp-manager\n' >> pnpm-work
 npx -y --package @deepseek-ai/dsh dsh plugin --profile web add @js2hou/dsh-mcp-manager
 ```
 
+> 也可直接 **GitHub 源安装**（构建产物 `lib/` 已入库，git 源安装不触发构建、无需本地构建）：
+> `dsh plugin --profile web add github:Js2Hou/dsh-mcp-manager`
+
 **Windows（PowerShell）**：
 
 ```powershell
