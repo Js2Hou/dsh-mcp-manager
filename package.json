@@ -1,6 +1,6 @@
 {
   "name": "@js2hou/dsh-mcp-manager",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "MCP visual manager plugin for DeepSeek Harness: inspect installed/enabled MCP servers, add/remove, enable/disable and view live connection status from the web GUI.",
   "type": "module",
   "main": "lib/index.js",
