@@ -24,9 +24,24 @@
 
 ## 🚀 安装
 
-**前置**：已装好 DSH（`dsh web` 能正常运行），Node.js ≥ 20、pnpm ≥ 10。
+插件已收录至 **[dsh-market](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)** 与 **[dsh-plugin-marketplace](https://github.com/AwesomeHou/dsh-plugin-marketplace)**。
 
-### 一键安装
+**前置**：DSH 已装好（`dsh web` 能正常运行）。
+
+### 方式一 · 插件市场安装（推荐）
+
+打开 **设置 → 插件**，搜索 `dsh-mcp-manager`，一键安装。
+
+### 方式二 · dsh 命令安装
+
+```sh
+dsh plugin --profile web add @js2hou/dsh-mcp-manager
+```
+
+> 也可 **GitHub 源安装**（构建产物 `lib/` 已入库，无需本地构建）：
+> `dsh plugin --profile web add github:Js2Hou/dsh-mcp-manager`
+
+### 方式三 · 一键脚本（自动处理新版放行与残留清理，幂等）
 
 **macOS / Linux**（Windows 装了 Git Bash 或 WSL 也可）：
 
@@ -40,33 +55,10 @@ curl -fsSL https://raw.githubusercontent.com/Js2Hou/dsh-mcp-manager/main/scripts
 irm https://raw.githubusercontent.com/Js2Hou/dsh-mcp-manager/main/scripts/install.ps1 | iex
 ```
 
-一键脚本会从 npm 安装 `@js2hou/dsh-mcp-manager` 并自动挂载；想基于本地源码调试时，直接在仓库 clone 里执行 `.\scripts\install.ps1`（脚本检测到本地 checkout 会自动用 `link:` 安装）。
-
 装完**硬刷新浏览器**（Cmd/Ctrl+Shift+R），打开 **设置 → MCP** 即可看到管理页。若未出现 MCP 页签，重启一次 DSH（host 半首次挂载需要）。
 
 <details>
-<summary><b>本地安装（开发调试；从仓库 clone 安装）</b></summary>
-
-把仓库 clone/复制到任意目录后，在仓库根目录执行：
-
-```sh
-# macOS / Linux
-bash scripts/install.sh
-
-# Windows PowerShell
-powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1
-```
-
-脚本检测到这是 `@js2hou/dsh-mcp-manager` 的 checkout，会自动用 `link:` 方式安装到 `~/.dsh/profiles/web` 并挂载。也可显式指定其他路径：
-
-```powershell
-.\scripts\install.ps1 -Path C:\path\to\dsh-mcp-manager -Restart
-```
-
-</details>
-
-<details>
-<summary><b>手动安装（逐步命令，想看清每一步）</b></summary>
+<summary><b>手动安装 / 本地开发</b></summary>
 
 **macOS / Linux（bash）**：
 
@@ -80,9 +72,6 @@ printf '\nminimumReleaseAgeExclude:\n  - @js2hou/dsh-mcp-manager\n' >> pnpm-work
 npx -y --package @deepseek-ai/dsh dsh plugin --profile web add @js2hou/dsh-mcp-manager
 ```
 
-> 也可直接 **GitHub 源安装**（构建产物 `lib/` 已入库，git 源安装不触发构建、无需本地构建）：
-> `dsh plugin --profile web add github:Js2Hou/dsh-mcp-manager`
-
 **Windows（PowerShell）**：
 
 ```powershell
@@ -95,21 +84,9 @@ Add-Content -Path pnpm-workspace.yaml -Value "`nminimumReleaseAgeExclude:`n  - @
 npx -y --package @deepseek-ai/dsh dsh plugin --profile web add @js2hou/dsh-mcp-manager
 ```
 
-> `dsh plugin --profile web add` 会自动：登记依赖 → 识别包内 `dsh.bundle.patch` → 注册进 `dsh.profile.bundles` 挂载 → 无需手改 `cordis.patch.yml`。本地 checkout 用 `dsh plugin --profile web add "link:C:/绝对路径/@js2hou/dsh-mcp-manager"` 同理。
+> `dsh plugin --profile web add` 会自动：登记依赖 → 识别包内 `dsh.bundle.patch` → 注册进 `dsh.profile.bundles` 挂载，无需手改 `cordis.patch.yml`。
 
-</details>
-
-<details>
-<summary><b>脚本内部做了什么（技术细节）</b></summary>
-
-一键脚本自动完成 4 件事（全部幂等，可安全重复执行）：
-
-1. 解析 dsh CLI：优先用桌面应用内置的 `dsh`（版本与运行中的应用完全一致、离线秒装），其次 npx，最后 PATH 上的 `dsh`；
-2. 预写 `minimumReleaseAgeExclude`，放行「发布不足 24 小时」的新版本（本插件无原生依赖，无需 `pnpm approve-builds`）；
-3. 清理旧版残留的手动挂载行（`cordis.patch.yml` 中 id 为 `mcp-manager` 的 insert 块），避免「双挂载」（页面出现两个 MCP 页签）；
-4. 执行 `dsh plugin --profile web add <包名|link:路径>`：登记依赖 → 识别包内 `dsh.bundle.patch` → 自动注册进 `dsh.profile.bundles` 挂载。
-
-`curl | bash` / `irm | iex` 会执行远程代码——脚本已随仓库开源（`scripts/install.sh` / `scripts/install.ps1`），可先下载审阅。插件以 npm 包 `@js2hou/dsh-mcp-manager` 发布，通过 `dsh.bundle.patch`（随包的 `cordis.patch.yml`）由官方 CLI 自动挂载，**不修改 DSH 源码**。
+**本地开发**：clone 仓库后在根目录执行 `bash scripts/install.sh`（Windows：`powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1`），脚本检测到 checkout 会自动用 `link:` 方式安装到 `~/.dsh/profiles/web`；也可显式指定：`dsh plugin --profile web add "link:C:/绝对路径/dsh-mcp-manager"`。
 
 </details>
 
@@ -129,6 +106,7 @@ dsh plugin --profile web add @js2hou/dsh-mcp-manager
 
 | 现象 | 原因与解决 |
 |---|---|
+| 插件市场搜不到 | 市场数据每日同步。稍后再搜，或改用「方式二」dsh 命令安装。 |
 | 报 `minimum release age` / 版本不足 24h | 装的版本发布不足 24 小时。等 24h 或重跑一次（脚本会自动补 `minimumReleaseAgeExclude`）。 |
 | 报「找不到 profile 目录」 | 先跑一次 `dsh web`，让它初始化 `~/.dsh/profiles/web`。 |
 | 页面出现**两个 MCP 页签** | 双挂载：`~/.dsh/profiles/web/cordis.patch.yml` 还留着旧的手动挂载行，删掉那段 `- insert: ... mcp-manager ...`（脚本会自动清）。 |

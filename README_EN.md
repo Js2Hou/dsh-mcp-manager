@@ -24,9 +24,24 @@
 
 ## 🚀 Install
 
-**Prerequisites**: DSH installed and running (`dsh web` works), Node.js ≥ 20, pnpm ≥ 10.
+Listed on **[dsh-market](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)** and **[dsh-plugin-marketplace](https://github.com/AwesomeHou/dsh-plugin-marketplace)**.
 
-### One-liner
+**Prerequisites**: DSH installed and running (`dsh web` works).
+
+### Option 1 · Plugin marketplace (recommended)
+
+Open **Settings → Plugins**, search for `dsh-mcp-manager`, and install with one click.
+
+### Option 2 · dsh CLI
+
+```sh
+dsh plugin --profile web add @js2hou/dsh-mcp-manager
+```
+
+> You can also install straight from GitHub (the built `lib/` bundles are committed, so no local build is needed):
+> `dsh plugin --profile web add github:Js2Hou/dsh-mcp-manager`
+
+### Option 3 · One-liner script (handles the 24h release-age gate and stale mounts, idempotent)
 
 **macOS / Linux** (also Git Bash / WSL on Windows):
 
@@ -40,33 +55,10 @@ curl -fsSL https://raw.githubusercontent.com/Js2Hou/dsh-mcp-manager/main/scripts
 irm https://raw.githubusercontent.com/Js2Hou/dsh-mcp-manager/main/scripts/install.ps1 | iex
 ```
 
-The script installs `@js2hou/dsh-mcp-manager` from npm and mounts it automatically. To work against the local source, run `.\scripts\install.ps1` from a clone of this repo instead (the script detects the checkout and installs it via `link:`).
-
 Then **hard-refresh the browser** (Cmd/Ctrl+Shift+R) and open **Settings → MCP**. If the MCP tab does not appear, restart DSH once (first-time host mounting).
 
 <details>
-<summary><b>Local install (development; from a clone)</b></summary>
-
-Clone/copy the repo anywhere, then from the repo root:
-
-```sh
-# macOS / Linux
-bash scripts/install.sh
-
-# Windows PowerShell
-powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1
-```
-
-The script detects the `@js2hou/dsh-mcp-manager` checkout and installs it into `~/.dsh/profiles/web` via `link:`. You can also pass an explicit path:
-
-```powershell
-.\scripts\install.ps1 -Path C:\path\to\dsh-mcp-manager -Restart
-```
-
-</details>
-
-<details>
-<summary><b>Manual install (step by step)</b></summary>
+<summary><b>Manual install / local development</b></summary>
 
 **macOS / Linux (bash)**:
 
@@ -80,9 +72,6 @@ printf '\nminimumReleaseAgeExclude:\n  - @js2hou/dsh-mcp-manager\n' >> pnpm-work
 npx -y --package @deepseek-ai/dsh dsh plugin --profile web add @js2hou/dsh-mcp-manager
 ```
 
-> You can also install directly from GitHub (the built `lib/` bundles are committed, so a git-source install needs no local build):
-> `dsh plugin --profile web add github:Js2Hou/dsh-mcp-manager`
-
 **Windows (PowerShell)**:
 
 ```powershell
@@ -95,21 +84,9 @@ Add-Content -Path pnpm-workspace.yaml -Value "`nminimumReleaseAgeExclude:`n  - @
 npx -y --package @deepseek-ai/dsh dsh plugin --profile web add @js2hou/dsh-mcp-manager
 ```
 
-> `dsh plugin --profile web add` registers the dependency, detects the package's `dsh.bundle.patch`, and adds it to `dsh.profile.bundles` — no manual `cordis.patch.yml` edits needed. A local checkout works the same way: `dsh plugin --profile web add "link:C:/absolute/path/@js2hou/dsh-mcp-manager"`.
+> `dsh plugin --profile web add` registers the dependency, detects the package's `dsh.bundle.patch`, and adds it to `dsh.profile.bundles` — no manual `cordis.patch.yml` edits needed.
 
-</details>
-
-<details>
-<summary><b>What the script does (technical details)</b></summary>
-
-The one-liner does 4 idempotent steps:
-
-1. Resolves the dsh CLI: the desktop app's bundled `dsh` first (exact version match, offline, instant), then npx, then `dsh` on PATH;
-2. Pre-writes `minimumReleaseAgeExclude` for freshly published versions (no native dependencies, so `pnpm approve-builds` is not needed);
-3. Removes any stale manual mount row (an `mcp-manager` insert block in `cordis.patch.yml`) to prevent double-mounting (two MCP tabs);
-4. Runs `dsh plugin --profile web add <package|link:path>`: registers the dependency, detects `dsh.bundle.patch`, and registers the package in `dsh.profile.bundles`.
-
-`curl | bash` / `irm | iex` execute remote code — the scripts are open source in this repo (`scripts/install.sh` / `scripts/install.ps1`); review them first. The plugin ships as the npm package `@js2hou/dsh-mcp-manager` and is auto-mounted by the official CLI through its `dsh.bundle.patch` (the bundled `cordis.patch.yml`) — **no DSH source modification**.
+**Local development**: clone the repo and run `bash scripts/install.sh` from its root (Windows: `powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1`); the script detects the checkout and installs it into `~/.dsh/profiles/web` via `link:`. Or pass the path explicitly: `dsh plugin --profile web add "link:C:/absolute/path/dsh-mcp-manager"`.
 
 </details>
 
@@ -129,6 +106,7 @@ Or re-run the one-liner; alternatively bump the version in `~/.dsh/profiles/web/
 
 | Symptom | Cause / fix |
 |---|---|
+| Not found in the plugin marketplace | Marketplace data syncs daily. Search again later, or install via Option 2 (`dsh plugin ...`). |
 | `minimum release age` / version < 24h | The published version is younger than 24h. Wait, or re-run (the script appends `minimumReleaseAgeExclude`). |
 | "Profile not found" | Run `dsh web` once to initialize `~/.dsh/profiles/web`. |
 | **Two MCP tabs** | Double-mount: a stale manual `- insert: ... mcp-manager ...` row still lives in `cordis.patch.yml` — delete it (the script does this automatically). |
