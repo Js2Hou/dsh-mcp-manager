@@ -3,9 +3,26 @@
 <!-- Hero -->
 <div align="center">
   <b style="font-size: 1.15em;">MCP 可视化管理器：装没装、连没连，一目了然</b><br /><br />
-  <code>查看列表</code> <code>新增删除</code> <code>启用停用</code> <code>连接状态</code> <code>连接测试</code> <code>中英双语</code><br /><br />
+  <code>查看列表</code> <code>新增删除</code> <code>启用停用</code> <code>连接状态</code> <code>连接测试</code> <code>中英双语</code><br />
+  <code>DeepSeek Harness</code> <code>DSH Desktop</code><br /><br />
   <b>设置 → MCP</b> 一站管理 DeepSeek Harness 里的所有 MCP 服务器，<br />
   无需再手改 <code>cordis.patch.yml</code> —— 所有修改即改即生效（HMR 热应用）。
+</div>
+
+<div align="center">
+
+[![npm version](https://img.shields.io/npm/v/@js2hou/dsh-mcp-manager?logo=npm&color=cb3837)](https://www.npmjs.com/package/@js2hou/dsh-mcp-manager)
+[![License](https://img.shields.io/github/license/Js2Hou/dsh-mcp-manager)](LICENSE)
+[![DSH Desktop](https://img.shields.io/badge/DSH%20Desktop-ready-000000)](https://github.com/anywhere-labs/deepseek-harness-desktop)
+
+<!-- listings:start -->
+[![dsh-market](https://img.shields.io/badge/dsh--market-%E2%9C%93-3fb950)](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)
+[![dsh-plugin-marketplace](https://img.shields.io/badge/dsh--plugin--marketplace-%E2%9C%93-3fb950)](https://github.com/AwesomeHou/dsh-plugin-marketplace)
+[![DSH 1024Store](https://img.shields.io/badge/DSH%201024Store-%E2%9C%93-3fb950)](https://github.com/imsai-sh/awesome-deepseek-harness-plugins)
+[![dshfind](https://img.shields.io/badge/dshfind-%E2%9C%93-3fb950)](https://github.com/hikariming/dshfind)
+<!-- listings:end -->
+
+
 </div>
 
 <div align="center">
@@ -24,24 +41,36 @@
 
 ## 🚀 安装
 
-插件已收录至 **[dsh-market](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)** 与 **[dsh-plugin-marketplace](https://github.com/AwesomeHou/dsh-plugin-marketplace)**。
+插件已收录至 **[dsh-market](https://github.com/dsh-market/dsh-market)** 与 **[dsh-plugin-marketplace](https://github.com/AwesomeHou/dsh-plugin-marketplace)**。
 
 **前置**：DSH 已装好（`dsh web` 能正常运行）。
 
-### 方式一 · 插件市场安装（推荐）
+### 方式一 · AI Agent 安装
 
-打开 **设置 → 插件**，搜索 `dsh-mcp-manager`，一键安装。
+> 告诉 Agent：「请安装 dsh-mcp-manager 插件，插件仓库是 https://github.com/Js2Hou/dsh-mcp-manager」
 
-### 方式二 · dsh 命令安装
+### 方式二 · 插件市场安装（推荐）
+
+任选一个插件市场：
+
+- **[DSH Desktop](https://github.com/anywhere-labs/deepseek-harness-desktop)（社区桌面版）**：内置插件市场，选 **DSH 1024Store** 或 **dshfind** 源，搜索 `js2hou/dsh-mcp-manager` 安装（同名插件较多，认准作者 **Js2Hou**）；
+- **[dsh-market](https://github.com/dsh-market/dsh-market)**：搜索 `js2hou/dsh-mcp-manager` 一键安装；
+- **[dsh-plugin-marketplace](https://github.com/AwesomeHou/dsh-plugin-marketplace)**：搜索 `js2hou/dsh-mcp-manager` 一键安装。
+
+### 方式三 · dsh 命令安装
 
 ```sh
 dsh plugin --profile web add @js2hou/dsh-mcp-manager
 ```
 
-> 也可 **GitHub 源安装**（构建产物 `lib/` 已入库，无需本地构建）：
-> `dsh plugin --profile web add github:Js2Hou/dsh-mcp-manager`
+也可 **GitHub 源安装**（构建产物 `lib/` 已入库，无需本地构建）：
 
-### 方式三 · 一键脚本（自动处理新版放行与残留清理，幂等）
+```sh
+dsh plugin --profile web add github:Js2Hou/dsh-mcp-manager
+```
+
+<details>
+<summary><b>脚本安装</b>（一键脚本安装：自动处理新版放行与残留清理，幂等）</summary>
 
 **macOS / Linux**（Windows 装了 Git Bash 或 WSL 也可）：
 
@@ -54,6 +83,8 @@ curl -fsSL https://raw.githubusercontent.com/Js2Hou/dsh-mcp-manager/main/scripts
 ```powershell
 irm https://raw.githubusercontent.com/Js2Hou/dsh-mcp-manager/main/scripts/install.ps1 | iex
 ```
+
+</details>
 
 装完**硬刷新浏览器**（Cmd/Ctrl+Shift+R），打开 **设置 → MCP** 即可看到管理页。若未出现 MCP 页签，重启一次 DSH（host 半首次挂载需要）。
 
@@ -106,7 +137,7 @@ dsh plugin --profile web add @js2hou/dsh-mcp-manager
 
 | 现象 | 原因与解决 |
 |---|---|
-| 插件市场搜不到 | 市场数据每日同步。稍后再搜，或改用「方式二」dsh 命令安装。 |
+| 插件市场搜不到 | 市场数据每日同步。稍后再搜，或改用「方式三」dsh 命令安装。 |
 | 报 `minimum release age` / 版本不足 24h | 装的版本发布不足 24 小时。等 24h 或重跑一次（脚本会自动补 `minimumReleaseAgeExclude`）。 |
 | 报「找不到 profile 目录」 | 先跑一次 `dsh web`，让它初始化 `~/.dsh/profiles/web`。 |
 | 页面出现**两个 MCP 页签** | 双挂载：`~/.dsh/profiles/web/cordis.patch.yml` 还留着旧的手动挂载行，删掉那段 `- insert: ... mcp-manager ...`（脚本会自动清）。 |

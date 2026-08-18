@@ -1,0 +1,44 @@
+{
+  "$comment": "Marketplace registry for dsh-mcp-manager. The check-listings.mjs script polls every entry daily and rewrites the <!-- listings:start --> block in README.md / README_EN.md. Add a newly discovered marketplace here (id, label, url, detect) and the badge row will be maintained automatically.",
+  "package": "@js2hou/dsh-mcp-manager",
+  "repo": "Js2Hou/dsh-mcp-manager",
+  "marketplaces": [
+    {
+      "id": "dsh-market",
+      "label": "dsh-market",
+      "url": "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin",
+      "detect": {
+        "kind": "url-status",
+        "url": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/main/data/plugins/Js2Hou__dsh-mcp-manager.yml"
+      }
+    },
+    {
+      "id": "dsh-plugin-marketplace",
+      "label": "dsh-plugin-marketplace",
+      "url": "https://github.com/AwesomeHou/dsh-plugin-marketplace",
+      "detect": {
+        "kind": "github-topic",
+        "topic": "dsh-plugin"
+      }
+    },
+    {
+      "id": "1024store",
+      "label": "DSH 1024Store",
+      "url": "https://github.com/imsai-sh/awesome-deepseek-harness-plugins",
+      "detect": {
+        "kind": "json-search",
+        "url": "https://api.deepseek1024.com/v1/plugins/search?q=dsh-mcp-manager",
+        "match": "Js2Hou/dsh-mcp-manager"
+      }
+    },
+    {
+      "id": "dshfind",
+      "label": "dshfind",
+      "url": "https://github.com/hikariming/dshfind",
+      "detect": {
+        "kind": "url-status",
+        "url": "https://api.dshfind.com/v1/plugins/Js2Hou/dsh-mcp-manager"
+      }
+    }
+  ]
+}

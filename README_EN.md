@@ -3,9 +3,26 @@
 <!-- Hero -->
 <div align="center">
   <b style="font-size: 1.15em;">A visual MCP manager — installed or not, connected or not, at a glance</b><br /><br />
-  <code>Server list</code> <code>Add / Remove</code> <code>Enable / Disable</code> <code>Connection status</code> <code>Connectivity test</code> <code>zh / en</code><br /><br />
+  <code>Server list</code> <code>Add / Remove</code> <code>Enable / Disable</code> <code>Connection status</code> <code>Connectivity test</code> <code>zh / en</code><br />
+  <code>DeepSeek Harness</code> <code>DSH Desktop</code><br /><br />
   Manage every MCP server in DeepSeek Harness from <b>Settings → MCP</b>,<br />
   no more hand-editing <code>cordis.patch.yml</code> — every change applies live (HMR hot reload).
+</div>
+
+<div align="center">
+
+[![npm version](https://img.shields.io/npm/v/@js2hou/dsh-mcp-manager?logo=npm&color=cb3837)](https://www.npmjs.com/package/@js2hou/dsh-mcp-manager)
+[![License](https://img.shields.io/github/license/Js2Hou/dsh-mcp-manager)](LICENSE)
+[![DSH Desktop](https://img.shields.io/badge/DSH%20Desktop-ready-000000)](https://github.com/anywhere-labs/deepseek-harness-desktop)
+
+<!-- listings:start -->
+[![dsh-market](https://img.shields.io/badge/dsh--market-%E2%9C%93-3fb950)](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)
+[![dsh-plugin-marketplace](https://img.shields.io/badge/dsh--plugin--marketplace-%E2%9C%93-3fb950)](https://github.com/AwesomeHou/dsh-plugin-marketplace)
+[![DSH 1024Store](https://img.shields.io/badge/DSH%201024Store-%E2%9C%93-3fb950)](https://github.com/imsai-sh/awesome-deepseek-harness-plugins)
+[![dshfind](https://img.shields.io/badge/dshfind-%E2%9C%93-3fb950)](https://github.com/hikariming/dshfind)
+<!-- listings:end -->
+
+
 </div>
 
 <div align="center">
@@ -24,24 +41,36 @@
 
 ## 🚀 Install
 
-Listed on **[dsh-market](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)** and **[dsh-plugin-marketplace](https://github.com/AwesomeHou/dsh-plugin-marketplace)**.
+Listed on **[dsh-market](https://github.com/dsh-market/dsh-market)** and **[dsh-plugin-marketplace](https://github.com/AwesomeHou/dsh-plugin-marketplace)**.
 
 **Prerequisites**: DSH installed and running (`dsh web` works).
 
-### Option 1 · Plugin marketplace (recommended)
+### Option 1 · AI agent install
 
-Open **Settings → Plugins**, search for `dsh-mcp-manager`, and install with one click.
+> Tell your agent: "Please install the dsh-mcp-manager plugin from https://github.com/Js2Hou/dsh-mcp-manager"
 
-### Option 2 · dsh CLI
+### Option 2 · Plugin marketplace (recommended)
+
+Pick one of the marketplaces:
+
+- **[DSH Desktop](https://github.com/anywhere-labs/deepseek-harness-desktop) (community desktop build)**: built-in plugin market — pick the **DSH 1024Store** or **dshfind** source and search for `js2hou/dsh-mcp-manager` (several plugins share that name — pick the one by **Js2Hou**);
+- **[dsh-market](https://github.com/dsh-market/dsh-market)**: search for `js2hou/dsh-mcp-manager` and install with one click;
+- **[dsh-plugin-marketplace](https://github.com/AwesomeHou/dsh-plugin-marketplace)**: search for `js2hou/dsh-mcp-manager` and install with one click.
+
+### Option 3 · dsh CLI
 
 ```sh
 dsh plugin --profile web add @js2hou/dsh-mcp-manager
 ```
 
-> You can also install straight from GitHub (the built `lib/` bundles are committed, so no local build is needed):
-> `dsh plugin --profile web add github:Js2Hou/dsh-mcp-manager`
+Or install straight from GitHub (the built `lib/` bundles are committed, so no local build is needed):
 
-### Option 3 · One-liner script (handles the 24h release-age gate and stale mounts, idempotent)
+```sh
+dsh plugin --profile web add github:Js2Hou/dsh-mcp-manager
+```
+
+<details>
+<summary><b>Script install</b> (one-liner: handles the 24h release-age gate and stale mounts, idempotent)</summary>
 
 **macOS / Linux** (also Git Bash / WSL on Windows):
 
@@ -54,6 +83,8 @@ curl -fsSL https://raw.githubusercontent.com/Js2Hou/dsh-mcp-manager/main/scripts
 ```powershell
 irm https://raw.githubusercontent.com/Js2Hou/dsh-mcp-manager/main/scripts/install.ps1 | iex
 ```
+
+</details>
 
 Then **hard-refresh the browser** (Cmd/Ctrl+Shift+R) and open **Settings → MCP**. If the MCP tab does not appear, restart DSH once (first-time host mounting).
 
@@ -106,7 +137,7 @@ Or re-run the one-liner; alternatively bump the version in `~/.dsh/profiles/web/
 
 | Symptom | Cause / fix |
 |---|---|
-| Not found in the plugin marketplace | Marketplace data syncs daily. Search again later, or install via Option 2 (`dsh plugin ...`). |
+| Not found in the plugin marketplace | Marketplace data syncs daily. Search again later, or install via Option 3 (`dsh plugin ...`). |
 | `minimum release age` / version < 24h | The published version is younger than 24h. Wait, or re-run (the script appends `minimumReleaseAgeExclude`). |
 | "Profile not found" | Run `dsh web` once to initialize `~/.dsh/profiles/web`. |
 | **Two MCP tabs** | Double-mount: a stale manual `- insert: ... mcp-manager ...` row still lives in `cordis.patch.yml` — delete it (the script does this automatically). |
