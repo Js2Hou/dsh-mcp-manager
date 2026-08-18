@@ -289,7 +289,7 @@ export function McpManagerSection({ ctx }: SectionProps): JSX.Element {
               <span className="dshmcp-spacer" />
               <span className="dshmcp-id" title={server.id}>{server.id}</span>
             </div>
-            <div className="dshmcp-name">{server.serverName || '(unnamed)'}</div>
+            <div className="dshmcp-name">{server.serverName || t('unnamed')}</div>
             <div className="dshmcp-target" title={targetOf(server)}>
               {targetOf(server) || (server.transport === 'stdio' ? 'stdio' : server.url ?? 'streamable-http')}
             </div>
@@ -297,7 +297,7 @@ export function McpManagerSection({ ctx }: SectionProps): JSX.Element {
               <span>{server.transport}</span>
               <span>{t('toolCount', { count: String(server.toolCount) })}</span>
               {!server.userManaged ? <span>{t('bundleDefined')}</span> : null}
-              {server.failOnStartupError === true ? <span>failOnStartupError</span> : null}
+              {server.failOnStartupError === true ? <span>{t('fieldFailStartup')}</span> : null}
               {server.reconnect?.enabled === false ? <span>{t('reconnectOff')}</span> : null}
             </div>
             {probe !== undefined ? (

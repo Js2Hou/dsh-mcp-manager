@@ -13,6 +13,7 @@ export const NS = 'mcpManager'
 export type McpManagerKeys =
   | 'nav'
   | 'title'
+  | 'unnamed'
   | 'total'
   | 'addServer'
   | 'connected'
@@ -84,6 +85,7 @@ export type McpManagerDict = Record<McpManagerKeys, string>
 export const zh: McpManagerDict = {
   nav: 'MCP',
   title: 'MCP 服务器',
+  unnamed: '（未命名）',
   total: '共 {count} 个',
   addServer: '添加服务器',
   connected: '{count} 个已连接',
@@ -124,8 +126,8 @@ export const zh: McpManagerDict = {
   fieldEnv: '环境变量（KEY=VALUE，每行一个）',
   fieldCwd: '工作目录（可选）',
   fieldHeaders: '请求头（Key: Value，每行一个）',
-  fieldTimeout: 'toolCallTimeoutMs（可选）',
-  fieldFailStartup: 'failOnStartupError',
+  fieldTimeout: '超时（毫秒，可选）',
+  fieldFailStartup: '启动失败即报错',
   cancel: '取消',
   save: '保存更改',
   errIdRequired: '条目 ID 必填',
@@ -147,6 +149,7 @@ export const zh: McpManagerDict = {
 export const en: McpManagerDict = {
   nav: 'MCP',
   title: 'MCP servers',
+  unnamed: '(unnamed)',
   total: '{count} total',
   addServer: 'Add server',
   connected: '{count} connected',
@@ -187,8 +190,8 @@ export const en: McpManagerDict = {
   fieldEnv: 'Env (KEY=VALUE, one per line)',
   fieldCwd: 'Working directory (optional)',
   fieldHeaders: 'Headers (Key: Value, one per line)',
-  fieldTimeout: 'toolCallTimeoutMs (optional)',
-  fieldFailStartup: 'failOnStartupError',
+  fieldTimeout: 'Timeout (ms, optional)',
+  fieldFailStartup: 'Fail on startup error',
   cancel: 'Cancel',
   save: 'Save changes',
   errIdRequired: 'Entry id is required',
