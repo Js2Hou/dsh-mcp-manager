@@ -70,9 +70,14 @@ function statusOf(server: McpServerInfo): { tone: string; key: StatusKey; count?
   if (!server.enabled) return { tone: 'off', key: 'statusDisabled' }
   switch (server.fiberPhase) {
     case 'active':
+      // The fiber being active only means the mcp-client entry is running;
+      // the MCP handshake succeeded only when tools are actually registered.
+      // With zero tools the server is effectively not connected, so it must
+      // never render green (that would mislead users into thinking the
+      // connection is healthy when it failed, e.g. HTTP 401 / crash loop).
       return server.toolCount > 0
         ? { tone: 'ok', key: 'statusConnected', count: String(server.toolCount) }
-        : { tone: 'ok', key: 'statusActiveNoTools' }
+        : { tone: 'warn', key: 'statusActiveNoTools' }
     case 'failed':
       return { tone: 'bad', key: 'statusFailed' }
     case 'loading':
