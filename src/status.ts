@@ -16,6 +16,7 @@ import type { Context } from '@deepseek-ai/cordis'
 // declaration merges into the program (runtime never imports these packages).
 import type {} from '@deepseek-ai/dsh-tools'
 import type {} from '@deepseek-ai/cordis-plugin-loader'
+import { isRecord, toExprMap, unresolvedJsExprPaths } from './jsexpr.ts'
 import {
   MCP_CLIENT_PACKAGE,
   type FiberPhase,
@@ -53,18 +54,26 @@ const FIBER_PHASE: Record<number, FiberPhase> = {
   [FIBER_STATE.UNLOADING]: 'unloading',
 }
 
-/** Normalize a raw mcp-client row config into the shared shape. */
-function toServerConfig(raw: unknown): McpServerConfig {
-  const cfg = (raw ?? {}) as Record<string, unknown>
+/**
+ * Normalize a raw mcp-client row config into the shared shape.
+ *
+ * `env`/`headers` go through {@link toExprMap}, so a value authored as a `!!js`
+ * expression is projected as its `!!js <expr>` source text rather than as the
+ * expression node. Passing the node through made the panel render
+ * `[object Object]` — and, worse, persist that literal back over the expression
+ * on the next save.
+ */
+export function toServerConfig(raw: unknown): McpServerConfig {
+  const cfg = isRecord(raw) ? raw : {}
   return {
     serverName: typeof cfg['serverName'] === 'string' ? cfg['serverName'] : '',
     transport: cfg['transport'] === 'stdio' ? 'stdio' : 'streamable-http',
     url: typeof cfg['url'] === 'string' ? cfg['url'] : undefined,
     command: typeof cfg['command'] === 'string' ? cfg['command'] : undefined,
     args: Array.isArray(cfg['args']) ? (cfg['args'] as string[]) : undefined,
-    env: isRecord(cfg['env']) ? (cfg['env'] as Record<string, string>) : undefined,
+    env: toExprMap(cfg['env']),
     cwd: typeof cfg['cwd'] === 'string' ? cfg['cwd'] : undefined,
-    headers: isRecord(cfg['headers']) ? (cfg['headers'] as Record<string, string>) : undefined,
+    headers: toExprMap(cfg['headers']),
     toolCallTimeoutMs: typeof cfg['toolCallTimeoutMs'] === 'number'
       ? cfg['toolCallTimeoutMs']
       : undefined,
@@ -75,8 +84,52 @@ function toServerConfig(raw: unknown): McpServerConfig {
   }
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
+/**
+ * Minimal structural view of a loader entry — the subset this module reads.
+ *
+ * Declared locally rather than imported so the host half keeps zero runtime
+ * `@deepseek-ai` imports; `ctx.loader.entries()` entries are assignable to it.
+ */
+export interface LoaderEntryView {
+  /** Row options as authored: `config` still contains `!!js` nodes. */
+  options: { config?: unknown }
+  /** Runtime fiber; absent while the entry has never started. */
+  fiber?: { config?: unknown }
+}
+
+/** Outcome of resolving the config a probe must use for one entry. */
+export type ProbeConfigSource =
+  | { ok: true; config: McpServerConfig }
+  | { ok: false; reason: string }
+
+/**
+ * Resolve the config a probe must use for one loader entry.
+ *
+ * A probe opens its own connection, so it has to reproduce the endpoint and the
+ * credentials the running instance uses — that is the **evaluated** config on
+ * `entry.fiber`, which the loader produced by running its `internal/config`
+ * waterfall over the authored tree. Probing with the authored tree instead
+ * hands the transport unevaluated `!!js` nodes, which is how a perfectly
+ * healthy server comes back as `Authorization header is badly formatted`.
+ *
+ * An entry that never started has no evaluated config. If its authored config
+ * carries expressions there is nothing truthful to probe with, so say that
+ * instead of guessing.
+ */
+export function probeConfigFor(entry: LoaderEntryView): ProbeConfigSource {
+  const evaluated = entry.fiber?.config
+  if (isRecord(evaluated)) return { ok: true, config: toServerConfig(evaluated) }
+
+  const authored = isRecord(entry.options.config) ? entry.options.config : {}
+  const pending = unresolvedJsExprPaths(authored)
+  if (pending.length > 0) {
+    return {
+      ok: false,
+      reason: 'This server is not running, so its !!js expressions have not been evaluated yet'
+        + ` (${pending.join(', ')}). Enable it, then probe again.`,
+    }
+  }
+  return { ok: true, config: toServerConfig(authored) }
 }
 
 /** Count tools registered on the harness registry under a server namespace. */

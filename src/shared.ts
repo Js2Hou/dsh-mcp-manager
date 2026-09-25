@@ -55,6 +55,22 @@ export interface McpServerConfig {
   }
 }
 
+/** One `env`/`header` value as authored in the patch file. */
+export type McpStoredValue = string | { __jsExpr: string }
+
+/**
+ * The on-disk projection of a server config.
+ *
+ * Identical to {@link McpServerConfig} except that `env`/`headers` may hold
+ * unevaluated `!!js` expression nodes. Only the *authored* tree has that shape:
+ * the panel edits the text form of those expressions, and the running entry
+ * holds the evaluated strings.
+ */
+export interface McpStoredConfig extends Omit<McpServerConfig, 'env' | 'headers'> {
+  env?: Record<string, McpStoredValue>
+  headers?: Record<string, McpStoredValue>
+}
+
 /** Full server snapshot the host exposes to the client. */
 export interface McpServerInfo extends McpServerConfig {
   /** Loader entry id of the mcp-client plugin instance. */

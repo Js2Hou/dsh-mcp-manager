@@ -19,18 +19,8 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import * as yaml from 'js-yaml'
-import type { McpServerConfig } from './shared.ts'
-
-/**
- * Mirrors `isJsExpr` from @deepseek-ai/cordis-plugin-loader (the harness's own
- * `cordis-plugin-include` uses it as the `!!js` yaml predicate). Replicated
- * inline so the host half has zero runtime imports of @deepseek-ai packages —
- * the plugin may be installed anywhere (e.g. via a `link:`), where bare
- * @deepseek-ai specifiers may not be resolvable from its real path.
- */
-function isJsExpr(value: unknown): value is { __jsExpr: unknown } {
-  return value instanceof Object && '__jsExpr' in value
-}
+import { isJsExpr } from './jsexpr.ts'
+import type { McpStoredConfig } from './shared.ts'
 
 /**
  * Mirrors `resolveDshHome` from @deepseek-ai/dsh-home-paths (same precedence:
@@ -142,7 +132,7 @@ function locate(rows: PatchRow[], id: string): Location {
  * Append a new MCP server as an id-less insert row (the only patch form that
  * creates brand-new entries in the composed tree).
  */
-export function addMcpRow(rows: PatchRow[], id: string, config: McpServerConfig): PatchRow[] {
+export function addMcpRow(rows: PatchRow[], id: string, config: McpStoredConfig): PatchRow[] {
   return [
     ...rows,
     { insert: [{ id, name: '@deepseek-ai/dsh-mcp-client', config }] },
@@ -210,7 +200,7 @@ export function setMcpEnabled(
 export function updateMcpConfig(
   rows: PatchRow[],
   id: string,
-  config: McpServerConfig,
+  config: McpStoredConfig,
 ): PatchRow[] {
   const found = locate(rows, id)
   if (found === undefined) {
