@@ -23,7 +23,8 @@ import { existsSync } from 'node:fs'
 import type { Context } from '@deepseek-ai/cordis'
 // Type-only: loads the `Context { connection }` declaration merge into the program.
 import type {} from '@deepseek-ai/dsh-client-connection'
-import { RPC_CHANNEL, type McpServerInfo } from './shared.ts'
+import { RPC_CHANNEL, MCP_CLIENT_PACKAGE, type McpServerInfo } from './shared.ts'
+import { toStoredConfig } from './jsexpr.ts'
 import {
   addMcpRow,
   editPatchList,
@@ -34,7 +35,7 @@ import {
   setMcpEnabled,
   updateMcpConfig,
 } from './patch.ts'
-import { entryIdTaken, listMcpServers, normalizeEntryId, serverNameTaken } from './status.ts'
+import { entryIdTaken, listMcpServers, normalizeEntryId, probeConfigFor, serverNameTaken } from './status.ts'
 import { probeServer } from './probe.ts'
 import { validateMcpConfig } from './validate.ts'
 import type { McpEndpoint, McpProbeResult, McpServerConfig } from './shared.ts'
@@ -127,7 +128,7 @@ async function dispatch(
           `serverName "${config.serverName}" is already used by another MCP server`,
         )
       }
-      editPatchList(patchFile, (rows) => addMcpRow(rows, id, config))
+      editPatchList(patchFile, (rows) => addMcpRow(rows, id, toStoredConfig(config)))
       return ok({ added: id })
     }
     case 'remove': {
@@ -152,38 +153,35 @@ async function dispatch(
           `serverName "${config.serverName}" is already used by another MCP server`,
         )
       }
-      editPatchList(patchFile, (rows) => updateMcpConfig(rows, id, config))
+      editPatchList(patchFile, (rows) => updateMcpConfig(rows, id, toStoredConfig(config)))
       return ok({ updated: id })
     }
     case 'probe': {
       const { id } = payload as { id: string }
-      let config: McpServerConfig | undefined
-      for (const entry of ctx.loader.entries()) {
-        if (entry.options.group) continue
-        if (normalizeEntryId(entry.id) === id) {
-          const raw = (entry.options.config ?? {}) as Record<string, unknown>
-          config = {
-            serverName: String(raw['serverName'] ?? ''),
-            transport: raw['transport'] === 'stdio' ? 'stdio' : 'streamable-http',
-            url: typeof raw['url'] === 'string' ? raw['url'] : undefined,
-            command: typeof raw['command'] === 'string' ? raw['command'] : undefined,
-            args: Array.isArray(raw['args']) ? raw['args'] as string[] : undefined,
-            env: isRecord(raw['env']) ? raw['env'] as Record<string, string> : undefined,
-            cwd: typeof raw['cwd'] === 'string' ? raw['cwd'] : undefined,
-            headers: isRecord(raw['headers']) ? raw['headers'] as Record<string, string> : undefined,
-          }
-          break
-        }
-      }
-      if (config === undefined) {
+      const entry = findMcpEntry(ctx, id)
+      if (entry === undefined) {
         return fail('not-found', `No MCP server entry with id "${id}"`)
       }
-      const result: McpProbeResult = await probeServer(config)
+      const source = probeConfigFor(entry)
+      if (!source.ok) {
+        return fail('unresolved-config', source.reason)
+      }
+      const result: McpProbeResult = await probeServer(source.config)
       return ok(result)
     }
     default:
       return fail('unknown-endpoint', `Unknown endpoint ${String(endpoint)}`)
   }
+}
+
+/** The live mcp-client entry behind a file-level entry id, when there is one. */
+function findMcpEntry(ctx: Context, id: string) {
+  for (const entry of ctx.loader.entries()) {
+    if (entry.options.group) continue
+    if (entry.options.name !== MCP_CLIENT_PACKAGE) continue
+    if (normalizeEntryId(entry.id) === id) return entry
+  }
+  return undefined
 }
 
 function operationError(
@@ -192,8 +190,4 @@ function operationError(
   fields?: Record<string, string>,
 ): RpcResult<never> {
   return fail(code, message, fields === undefined ? {} : { fields })
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
