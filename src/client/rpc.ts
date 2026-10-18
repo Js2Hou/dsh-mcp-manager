@@ -6,7 +6,7 @@
  */
 import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
 import type { ClientConnectionRpc } from '@deepseek-ai/dsh-client-connection/client'
-import { RPC_CHANNEL, type McpEndpoint } from '../shared.ts'
+import { RPC_CHANNEL, RPC_ENDPOINT_PREFIX, type McpEndpoint } from '../shared.ts'
 
 /** Minimal mirror of the host's RpcResult envelope. */
 type RpcResult<T> =
@@ -51,7 +51,11 @@ export async function callRpc<T>(
   endpoint: McpEndpoint,
   payload?: unknown,
 ): Promise<T> {
-  const raw = await connectionRpcOf(ctx).call(RPC_CHANNEL, endpoint, payload ?? null)
+  const raw = await connectionRpcOf(ctx).call(
+    RPC_CHANNEL,
+    RPC_ENDPOINT_PREFIX,
+    { action: endpoint, data: payload ?? null },
+  )
   const result = raw as unknown as RpcResult<T>
   if (result.ok) return result.value
   throw new McpManagerRpcError(result.error)

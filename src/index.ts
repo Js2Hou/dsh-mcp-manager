@@ -23,7 +23,7 @@ import { existsSync } from 'node:fs'
 import type { Context } from '@deepseek-ai/cordis'
 // Type-only: loads the `Context { connection }` declaration merge into the program.
 import type {} from '@deepseek-ai/dsh-client-connection'
-import { RPC_CHANNEL, type McpServerInfo } from './shared.ts'
+import { RPC_CHANNEL, RPC_ENDPOINT_PREFIX, type McpServerInfo } from './shared.ts'
 import {
   addMcpRow,
   editPatchList,
@@ -78,22 +78,66 @@ export function apply(ctx: Context, rawConfig?: McpManagerRowConfig): void {
   const patchFile = resolvePatchPath(rawConfig?.patchFile)
   const logger = ctx.logger('mcp-manager')
 
-  ctx.effect(() => {
-    // The generic RPC channel's declared envelope is the closed api-map
-    // `RpcError` union; this plugin-owned channel speaks its own open error
-    // codes, so the handler is cast at the boundary (wire envelope unchanged).
-    const handler = (async (endpoint: string, payload: unknown) =>
-      dispatch(ctx, patchFile, endpoint as McpEndpoint, payload)) as unknown as
-      Parameters<typeof ctx.connection.rpc.handle>[1]
-    const dispose = ctx.connection.rpc.handle(
-      RPC_CHANNEL,
-      handler,
-      { authority: 'loopback' },
-    )
-    return () => { void dispose() }
-  }, 'mcp-manager: rpc channel')
+  // The browser half reaches this half through the shared `/api` carrier's
+  // exact Fetch-route registry. `rpc.handle()` cannot be used: it builds its
+  // dedicated channel by reading `owner.webServer` from the Connection
+  // service's own context, which newer harness builds refuse ("cannot get
+  // property webServer without inject"), leaving the browser half talking to
+  // the static fallback (`HTTP 405`). Fetch routes touch no carrier state —
+  // Connection mounts the `/api` route itself — and they reuse its browser
+  // authentication, so the channel stays loopback-equivalent.
+  ctx.inject(['connection'], (rpcCtx) => {
+    rpcCtx.effect(() => {
+      const dispose = rpcCtx.connection.fetch.register({
+        path: `${RPC_CHANNEL}/${RPC_ENDPOINT_PREFIX}`,
+        methods: ['POST'],
+        fetch: async (request: Request): Promise<Response> => {
+          const envelope = await readClientRequest(request)
+          if (envelope === undefined) {
+            return new Response('invalid client-request envelope', { status: 400 })
+          }
+          const action = envelope.action
+          let result: RpcResult<unknown>
+          try {
+            result = typeof action === 'string'
+              ? await dispatch(ctx, patchFile, action as McpEndpoint, envelope.data)
+              : fail('unknown-endpoint', 'Missing action')
+          } catch (error) {
+            result = fail('internal', error instanceof Error ? error.message : String(error))
+          }
+          return Response.json({ type: 'server-response', rpcId: envelope.rpcId, result })
+        },
+      })
+      return () => { void dispose() }
+    }, 'mcp-manager: rpc channel')
+  })
 
   logger.info('mcp-manager active (patch file: %s)', patchFile)
+}
+
+/** Parsed shape of the browser half's request envelope. */
+interface ClientRequestEnvelope {
+  rpcId: string
+  action: unknown
+  data: unknown
+}
+
+/**
+ * Read one browser request into this plugin's envelope. The carrier already
+ * validated transport-level shape; this only extracts the payload fields.
+ * @param request - incoming Fetch API request.
+ * @returns the extracted envelope, or undefined when unparseable.
+ */
+async function readClientRequest(request: Request): Promise<ClientRequestEnvelope | undefined> {
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return undefined
+  }
+  const message = body as { type?: unknown; rpcId?: unknown; payload?: { action?: unknown; data?: unknown } }
+  if (message.type !== 'client-request' || typeof message.rpcId !== 'string') return undefined
+  return { rpcId: message.rpcId, action: message.payload?.action, data: message.payload?.data }
 }
 
 /** Route one RPC endpoint to its implementation. */
