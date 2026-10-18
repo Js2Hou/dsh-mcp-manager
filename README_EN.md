@@ -225,8 +225,8 @@ The plugin's loader row accepts one optional field:
 
 ## 🏗️ Architecture
 
-- **Host half** (`src/index.ts`) registers a loopback-only Connection RPC channel `/mcp-manager`: `list` (enumerates `@deepseek-ai/dsh-mcp-client` entries via `ctx.loader` + tool counts via `ctx.tools`), `add` / `remove` / `setEnabled` / `update` (edits the profile patch layer, persisted and HMR-applied), `probe` (independent MCP SDK connectivity probe), `patchInfo`. Zero runtime `@deepseek-ai` imports (the js-yaml `!!js` dialect and `isJsExpr` are inlined), so it can be installed from any path.
-- **Browser half** (`src/client`) registers the Settings → MCP section (`settings.section` slot, order 18), provides zh/en copy via `ctx.locale`, and talks to the host exclusively over the RPC channel — it never touches the filesystem.
+- **Host half** (`src/index.ts`) answers the browser half's `{action, data}` requests on the shared `/api` carrier's Fetch route (`/api/mcp-manager`); actions are `list` (enumerates `@deepseek-ai/dsh-mcp-client` entries via `ctx.loader` + tool counts via `ctx.tools`), `add` / `remove` / `setEnabled` / `update` (edits the profile patch layer, persisted and HMR-applied), `probe` (independent MCP SDK connectivity probe), and `patchInfo`. Requests reuse the carrier's browser authentication; zero runtime `@deepseek-ai` imports (the js-yaml `!!js` dialect and `isJsExpr` are inlined), so it can be installed from any path.
+- **Browser half** (`src/client`) registers the Settings → MCP section (`settings.section` slot, order 18), provides zh/en copy via `ctx.locale`, and talks to the host exclusively over `/api/mcp-manager` — it never touches the filesystem.
 - **Test fixture** — `test/fixtures/mcp-test-server.mjs` is a minimal MCP stdio server for end-to-end verification.
 
 ## Development
