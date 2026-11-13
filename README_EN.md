@@ -248,7 +248,7 @@ The plugin's loader row accepts one optional field:
 
 | Field | Description |
 |---|---|
-| `patchFile` | Absolute path of the user patch layer to edit. Defaults to `$DSH_HOME/profiles/web/cordis.patch.yml`. |
+| `patchFile` | Absolute path of the user patch layer to edit. Defaults to the running profile's layer (`$DSH_HOME/profiles/<profile>/cordis.patch.yml`), detected from `DSH_PROFILE`, DSH Desktop's `DSH_USER_AGENT_SUFFIX`, or the profile directories that exist; falls back to `web`. |
 
 ## 🏗️ Architecture
 
