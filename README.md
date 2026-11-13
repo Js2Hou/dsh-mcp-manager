@@ -248,7 +248,7 @@ dsh plugin --profile web add @js2hou/dsh-mcp-manager
 
 | 字段 | 说明 |
 |---|---|
-| `patchFile` | 要编辑的用户补丁层绝对路径。默认 `$DSH_HOME/profiles/web/cordis.patch.yml`。 |
+| `patchFile` | 要编辑的用户补丁层绝对路径。默认为当前运行 profile 的补丁层（`$DSH_HOME/profiles/<profile>/cordis.patch.yml`；自动识别 `DSH_PROFILE`、DSH Desktop 的 `DSH_USER_AGENT_SUFFIX` 或现有 profile 目录，识别不到时回退 `web`）。 |
 
 ## 🏗️ 架构
 

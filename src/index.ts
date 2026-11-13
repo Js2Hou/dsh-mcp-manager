@@ -16,7 +16,9 @@
  *
  * Config (row config in cordis.patch.yml; all optional):
  *   patchFile   absolute path of the user patch layer to edit
- *               (default: $DSH_HOME/profiles/web/cordis.patch.yml)
+ *               (default: $DSH_HOME/profiles/<current profile>/cordis.patch.yml,
+ *               detected from DSH_PROFILE / DSH_USER_AGENT_SUFFIX / existing
+ *               profiles; falls back to `web`)
  * @module dsh-mcp-manager
  */
 import { existsSync } from 'node:fs'
