@@ -1,5 +1,5 @@
 /**
- * User patch-layer editor for the web profile's `cordis.patch.yml`.
+ * User patch-layer editor for the running profile's `cordis.patch.yml`.
  *
  * MCP servers live as `@deepseek-ai/dsh-mcp-client` plugin entries composed
  * into the loader tree. The user-editable layer is the profile patch file; the
@@ -15,7 +15,7 @@
  *
  * @module dsh-mcp-manager/patch
  */
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import * as yaml from 'js-yaml'
@@ -80,10 +80,44 @@ const PATCH_HEADER = `# MCP servers managed by the dsh-mcp-manager plugin.
 # allowed). Edit here, or use the MCP Manager panel in the web GUI.
 `
 
-/** Resolve the user patch file for the running profile (config override wins). */
+/**
+ * Resolve the user patch file for the running profile (config override wins).
+ *
+ * The host process does not always expose `DSH_PROFILE`: DSH Desktop passes the
+ * profile directory as a launch argument and exports
+ * `DSH_USER_AGENT_SUFFIX=dsh-profile/<name>` instead. Hard-coding `web` made
+ * every panel action fail with ENOENT on Desktop installs, so detect the active
+ * profile first and only fall back to `web`.
+ */
 export function resolvePatchPath(configured?: string): string {
   if (configured !== undefined && configured.trim() !== '') return configured.trim()
-  return join(resolveDshHome(), 'profiles', 'web', 'cordis.patch.yml')
+  const home = resolveDshHome()
+  return join(home, 'profiles', detectProfileName(home), 'cordis.patch.yml')
+}
+
+/** Best-effort name of the profile this host was launched for. */
+function detectProfileName(home: string): string {
+  const explicit = process.env['DSH_PROFILE']?.trim()
+  if (explicit !== undefined && explicit !== '') return explicit
+
+  // DSH Desktop (community build) sets this instead of DSH_PROFILE.
+  const suffix = process.env['DSH_USER_AGENT_SUFFIX']?.trim()
+  const fromSuffix = suffix?.match(/^dsh-profile\/([A-Za-z0-9._-]+)$/)?.[1]
+  if (fromSuffix !== undefined) return fromSuffix
+
+  // No env hint (e.g. `dsh web` started directly): use the profiles that exist.
+  try {
+    const names = readdirSync(join(home, 'profiles'), { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() || entry.isSymbolicLink())
+      .map((entry) => entry.name)
+    if (names.length === 1 && names[0] !== undefined) return names[0]
+    for (const name of ['web', 'desktop']) {
+      if (names.includes(name)) return name
+    }
+  } catch {
+    // Missing profiles directory; keep the historical default.
+  }
+  return 'web'
 }
 
 /** Read and parse the patch file; a missing file yields an empty list. */
