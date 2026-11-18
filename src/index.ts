@@ -25,6 +25,7 @@ import { existsSync } from 'node:fs'
 import type { Context } from '@deepseek-ai/cordis'
 // Type-only: loads the `Context { connection }` declaration merge into the program.
 import type {} from '@deepseek-ai/dsh-client-connection'
+import { interpolateConfig, isJsExpr } from './interpolate.ts'
 import { RPC_CHANNEL, RPC_ENDPOINT_PREFIX, type McpServerInfo } from './shared.ts'
 import {
   addMcpRow,
@@ -36,7 +37,7 @@ import {
   setMcpEnabled,
   updateMcpConfig,
 } from './patch.ts'
-import { entryIdTaken, listMcpServers, normalizeEntryId, serverNameTaken } from './status.ts'
+import { entryIdTaken, listMcpServers, normalizeEntryId, serverNameTaken, toServerConfig } from './status.ts'
 import { probeServer } from './probe.ts'
 import { validateMcpConfig } from './validate.ts'
 import type { McpEndpoint, McpProbeResult, McpServerConfig } from './shared.ts'
@@ -46,6 +47,10 @@ export const name = 'mcp-manager'
 
 /** Required services: the Connection RPC registry, the loader tree, tools. */
 export const inject = ['connection', 'loader', 'tools']
+
+// Re-exported for the config-interpolation unit tests (`test/`); the harness
+// only consumes `name` / `inject` / `apply`.
+export { interpolateConfig, isJsExpr }
 
 /** Raw row config — every field defaults in code. */
 export interface McpManagerRowConfig {
@@ -207,17 +212,11 @@ async function dispatch(
       for (const entry of ctx.loader.entries()) {
         if (entry.options.group) continue
         if (normalizeEntryId(entry.id) === id) {
-          const raw = (entry.options.config ?? {}) as Record<string, unknown>
-          config = {
-            serverName: String(raw['serverName'] ?? ''),
-            transport: raw['transport'] === 'stdio' ? 'stdio' : 'streamable-http',
-            url: typeof raw['url'] === 'string' ? raw['url'] : undefined,
-            command: typeof raw['command'] === 'string' ? raw['command'] : undefined,
-            args: Array.isArray(raw['args']) ? raw['args'] as string[] : undefined,
-            env: isRecord(raw['env']) ? raw['env'] as Record<string, string> : undefined,
-            cwd: typeof raw['cwd'] === 'string' ? raw['cwd'] : undefined,
-            headers: isRecord(raw['headers']) ? raw['headers'] as Record<string, string> : undefined,
-          }
+          // The probe must test the values the plugin actually runs with:
+          // `entry.options.config` is the raw tree whose `!!js` nodes are
+          // serialized, so interpolate before connecting.
+          const raw = interpolateConfig(ctx, entry.options.config ?? {}) as Record<string, unknown>
+          config = toServerConfig(raw)
           break
         }
       }
@@ -241,5 +240,8 @@ function operationError(
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
+  // `!!js` nodes are objects but never usable records (defense in depth: an
+  // interpolated config should not contain them, but a throwing expression
+  // could leave one behind upstream of this guard).
+  return typeof value === 'object' && value !== null && !Array.isArray(value) && !isJsExpr(value)
 }

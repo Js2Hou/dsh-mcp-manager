@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": false,
+    "types": [],
+    "baseUrl": ".",
+    "paths": {
+      "@js2hou/dsh-mcp-manager": ["./types/index.d.ts"],
+      "@js2hou/dsh-mcp-manager/client": ["./types/client/index.d.ts"]
+    }
+  },
+  "include": ["types-consumer.ts"]
+}

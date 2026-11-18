@@ -16,6 +16,7 @@ import type { Context } from '@deepseek-ai/cordis'
 // declaration merges into the program (runtime never imports these packages).
 import type {} from '@deepseek-ai/dsh-tools'
 import type {} from '@deepseek-ai/cordis-plugin-loader'
+import { interpolateConfig, isJsExpr } from './interpolate.ts'
 import {
   MCP_CLIENT_PACKAGE,
   type FiberPhase,
@@ -54,7 +55,7 @@ const FIBER_PHASE: Record<number, FiberPhase> = {
 }
 
 /** Normalize a raw mcp-client row config into the shared shape. */
-function toServerConfig(raw: unknown): McpServerConfig {
+export function toServerConfig(raw: unknown): McpServerConfig {
   const cfg = (raw ?? {}) as Record<string, unknown>
   return {
     serverName: typeof cfg['serverName'] === 'string' ? cfg['serverName'] : '',
@@ -76,7 +77,10 @@ function toServerConfig(raw: unknown): McpServerConfig {
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
+  // A `!!js` expression node is an object but not a usable record: exclude it
+  // so a node that survived interpolation (e.g. a throwing expression) never
+  // reaches the MCP SDK as a value.
+  return typeof value === 'object' && value !== null && !Array.isArray(value) && !isJsExpr(value)
 }
 
 /** Count tools registered on the harness registry under a server namespace. */
@@ -96,7 +100,9 @@ export function listMcpServers(ctx: Context, userManaged: (id: string) => boolea
   for (const entry of ctx.loader.entries()) {
     if (entry.options.group) continue
     if (entry.options.name !== MCP_CLIENT_PACKAGE) continue
-    const config = toServerConfig(entry.options.config)
+    // `entry.options.config` is the raw, pre-interpolation tree: interpolate
+    // first so the panel shows the values the plugin actually runs with.
+    const config = toServerConfig(interpolateConfig(ctx, entry.options.config ?? {}))
     const phase = entry.fiber === undefined ? null : FIBER_PHASE[entry.fiber.state] ?? null
     const id = normalizeEntryId(entry.id)
     servers.push({
